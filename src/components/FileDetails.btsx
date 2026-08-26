@@ -1,0 +1,114 @@
+module
+  "use strong";
+  interface FileDetailsProps {
+    file: StoredFile | null;
+    onClose: () => void;
+    deleteFile: (id: string) => void | Promise<void>;
+  }
+
+  function formatFileDate(value: string) {
+    return new Intl.DateTimeFormat('en', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC'
+    }).format(new Date(value));
+  }
+
+import type { StoredFile } from '@/types/file'
+import { formatBytes, getFileIcon } from '@/utils/helpers'
+import CategoryPill from './CategoryPill.btsx'
+import {Icon} from '@/lib/icons'
+
+props { file, onClose, deleteFile }: FileDetailsProps
+
+fragment
+  if file
+    button(className="fixed inset-x-0 bottom-0 top-[72px] z-[60] hidden cursor-default border-0 bg-invert/20 backdrop-blur-[2px] dark:top-[52px] max-[1100px]:block max-[820px]:top-16 max-[820px]:dark:top-16" type="button" onClick={onClose} aria-label="Close file details")
+
+  aside(
+    ~ className={[
+    ~   'h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.5px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b]',
+    ~   file
+    ~     ? 'max-[1100px]:fixed max-[1100px]:bottom-[18px] max-[1100px]:right-[18px] max-[1100px]:top-[86px] max-[1100px]:z-[65] max-[1100px]:h-auto max-[1100px]:w-[min(330px,calc(100vw-36px))] max-[1100px]:shadow-[0_16px_40px_rgba(25,31,55,0.1)] max-[820px]:bottom-3 max-[820px]:left-3 max-[820px]:right-3 max-[820px]:top-auto max-[820px]:h-[min(72vh,620px)] max-[820px]:w-auto max-[820px]:rounded-[18px]'
+    ~     : 'max-[1100px]:hidden'
+    ~ ]}
+    ~ aria-label="File details"
+    ~ )
+    div(className="flex min-h-[54px] items-center justify-between border-b border-sidebar-border px-[15px] text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground dark:min-h-[50px] dark:border-[#0b0b0b] dark:bg-[#303030] dark:text-[#b7b7b7] [&_button]:grid [&_button]:size-[30px] [&_button]:cursor-pointer [&_button]:place-items-center [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:p-0 [&_button]:text-muted-foreground [&_button:hover]:bg-background [&_button:hover]:text-foreground")
+      span File intelligence
+      if file
+        button(type="button" onClick={onClose} aria-label="Close file details")
+          Icon(name="close")
+
+    if file
+      div(className="p-[17px]")
+        if file.mimeType.startsWith('image/')
+          figure(className="mb-4 overflow-hidden rounded-xl border border-sidebar-border bg-card p-2 dark:rounded-none dark:border-[#111] dark:bg-[#202020] dark:p-1.5 dark:shadow-[inset_0_1px_3px_#111]")
+            img(
+              ~ className="aspect-[4/3] w-full rounded-lg bg-background object-contain dark:rounded-none dark:bg-[#191919]"
+              ~ src={`/api/files/${encodeURIComponent(file.id)}?preview=1`}
+              ~ alt={`Preview of ${file.name}`}
+              ~ loading="lazy"
+              ~ )
+            figcaption(className="flex items-center justify-between border-t border-sidebar-border px-1.5 pb-0.5 pt-2 text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground dark:border-[#111]")
+              span Image preview
+              span #{file.mimeType.replace('image/', '').toUpperCase()}
+
+        div(className="flex items-start gap-3")
+          span(className="grid size-[47px] shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:rounded-full dark:border dark:border-[#111] dark:bg-[#242424] dark:shadow-[inset_0_1px_0_#474747,0_2px_4px_#151515] [&>div]:flex")
+            Icon(name={getFileIcon(file.name, file.mimeType)} size={25})
+          div.min-w-0
+            h2(className="mt-[3px] line-clamp-2 overflow-hidden text-[13px] leading-[1.35] tracking-[-0.02em]") #{file.name}
+            p(className="mb-0 mt-[7px] text-[9px] text-muted-foreground [&_span]:mx-1")
+              | #{formatBytes(file.size)}
+              span •
+              | #{formatFileDate(file.createdAt)}
+
+        div(className="mt-4 grid grid-cols-[minmax(0,1fr)_38px] gap-2 [&>a]:inline-flex [&>a]:h-[37px] [&>a]:cursor-pointer [&>a]:items-center [&>a]:justify-center [&>a]:gap-[7px] [&>a]:rounded-[9px] [&>a]:border [&>a]:border-brand [&>a]:bg-brand [&>a]:text-[10px] [&>a]:font-[650] [&>a]:text-brand-foreground [&>a]:no-underline [&>a:hover]:bg-brand-strong dark:[&>a]:rounded-sm dark:[&>a]:border-[#111] dark:[&>a]:shadow-[inset_0_1px_0_#efefef] [&>button]:inline-flex [&>button]:h-[37px] [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-center [&>button]:gap-[7px] [&>button]:rounded-[9px] [&>button]:border [&>button]:border-sidebar-border [&>button]:bg-surface [&>button]:text-[10px] [&>button]:font-[650] [&>button]:text-foreground dark:[&>button]:rounded-sm dark:[&>button]:border-[#111] dark:[&>button]:bg-[#292929] dark:[&>button]:shadow-[inset_0_1px_0_#444] [&>button:hover]:border-destructive/30 [&>button:hover]:bg-destructive/10 [&>button:hover]:text-destructive")
+          a(href={`/api/files/${encodeURIComponent(file.id)}`})
+            Icon(name="external-link")
+            | Open file
+          button(type="button" onClick={() => { void deleteFile(file.id); onClose(); }})
+            Icon(name="trash-delete")
+
+        section(className="mt-[19px] border-t border-sidebar-border pt-[18px]")
+          div(className="flex items-center justify-between text-muted-foreground [&_svg]:text-brand")
+            h3(className="m-0 text-[10px] font-[680] text-foreground") Smart classification
+            Icon(name="sparkles" size={15})
+          div(className="mt-3 flex flex-wrap gap-1.5 [&>span:last-child]:inline-flex [&>span:last-child]:min-h-[21px] [&>span:last-child]:items-center [&>span:last-child]:rounded-md [&>span:last-child]:bg-muted [&>span:last-child]:px-2 [&>span:last-child]:text-[8.5px] [&>span:last-child]:font-[630] [&>span:last-child]:text-muted-foreground")
+            CategoryPill(category={file.category})
+            span #{file.kind}
+          div(className="mt-[15px] flex items-center justify-between text-[9px] text-muted-foreground [&_strong]:text-[10px] [&_strong]:text-positive")
+            span Match confidence
+            strong #{file.confidence}%
+          div(className="mt-[7px] h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true")
+            span(className="block h-full rounded-[inherit] bg-positive" style={{ width: `${file.confidence}%` }})
+
+        section(className="mt-[19px] border-t border-sidebar-border pt-[18px]")
+          div(className="flex items-center justify-between text-muted-foreground [&_svg]:text-brand")
+            h3(className="m-0 text-[10px] font-[680] text-foreground") Content summary
+            Icon(name="shield-check")
+          p(className="mt-[11px] line-clamp-7 overflow-hidden text-[9.5px] leading-[1.65] text-muted-foreground") #{file.excerpt || 'No readable text was found. This file was organized using its name and file type.'}
+          span(className="mt-[11px] inline-flex items-center text-[8.5px] font-[620] text-positive") Analyzed privately on this device
+
+        section(className="mt-[19px] grid gap-[13px] border-t border-sidebar-border pt-[18px]")
+          h3(className="m-0 text-[10px] font-[680] text-foreground") Activity
+          div(className="relative flex items-start gap-[9px]")
+            span(className="grid size-[25px] shrink-0 place-items-center rounded-full bg-success/15 text-positive")
+              Icon(name="check")
+            div
+              strong(className="mt-px block text-[9.25px] text-foreground") Added to your library
+              p(className="mb-0 mt-1 text-[8.5px] text-muted-foreground") #{formatFileDate(file.createdAt)}
+          div(className="relative flex items-start gap-[9px] before:absolute before:bottom-[calc(100%-4px)] before:left-3 before:h-3.5 before:w-px before:bg-sidebar-border before:content-['']")
+            span(className="grid size-[25px] shrink-0 place-items-center rounded-full bg-brand-soft text-brand")
+              Icon(name="sparkles")
+            div
+              strong(className="mt-px block text-[9.25px] text-foreground") Sorted into #{file.category}
+              p(className="mb-0 mt-1 text-[8.5px] text-muted-foreground") #{file.confidence}% classification confidence
+    else
+      div(className="grid min-h-[calc(100%-54px)] content-center justify-items-center p-7 text-center")
+        span(className="grid size-12 place-items-center rounded-[14px] bg-muted text-muted-foreground")
+          Icon(name="search")
+        h2(className="mb-0 mt-3.5 text-xs text-foreground") Select a file
+        p(className="mb-0 mt-[7px] max-w-[205px] text-[9.5px] leading-[1.55] text-muted-foreground") Choose a file to see its classification, content summary, and local activity.

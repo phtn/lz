@@ -1,0 +1,14 @@
+module
+  "use strong";
+  interface CategoryPillProps { category: CategoryName }
+
+import { CATEGORY_META } from '@/constants/meta'
+import type { CategoryName } from '@/types/file'
+
+props { category }: CategoryPillProps
+setup const meta = CATEGORY_META[category];
+
+span(
+  ~ className="inline-flex min-h-[21px] items-center justify-center whitespace-nowrap rounded-md px-2 text-[8.5px] font-[680] dark:!rounded-sm dark:!bg-[#292929] dark:!text-[#cecece] dark:ring-1 dark:ring-[#515151]"
+  ~ style={{ color: meta.color, background: meta.background }}
+  ~ ) #{category}

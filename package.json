@@ -1,0 +1,32 @@
+{
+  "name": "drop-zone-beast",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "preview": "octane-rsbuild-preview",
+    "start": "octane-rsbuild-preview",
+    "typecheck": "tsrx-tsc --noEmit",
+    "check": "bun run typecheck && bun run build"
+  },
+  "dependencies": {
+    "@octanejs/lucide": "0.1.41",
+    "@octanejs/rsbuild-plugin": "0.1.41",
+    "beast-tsrx": "latest",
+    "clsx": "^2.1.1",
+    "octane": "0.1.46",
+    "pdfjs-dist": "^6.2.108",
+    "tailwind-merge": "^3.6.0",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^2.2.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tsrx/typescript-plugin": "0.3.118",
+    "@types/node": "^26.2.0",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.9.3"
+  }
+}

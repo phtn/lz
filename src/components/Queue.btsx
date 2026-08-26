@@ -1,0 +1,104 @@
+module
+  "use strong";
+  interface QueueProps {
+    queue: QueueItem[];
+    activeQueueCount: number;
+    removeItem: (id: string) => void;
+    retryItem: (id: string) => void;
+    isOpen: boolean;
+    onClose: () => void;
+  }
+
+import { STATUS_COPY } from '@/constants/meta'
+import type { QueueItem } from '@/types/file'
+import { formatBytes, getFileIcon } from '@/utils/helpers'
+import CategoryPill from './CategoryPill.btsx'
+import {Icon} from '@/lib/icons'
+
+props { queue, activeQueueCount, removeItem, retryItem, isOpen, onClose }: QueueProps
+setup
+  const errorCount = queue.filter((item) => item.status === 'error').length;
+  const activeItem = queue.find((item) => item.status !== 'queued' && item.status !== 'error' && item.status !== 'done');
+  const primaryItem = activeItem ?? queue.find((item) => item.status === 'error') ?? queue[0] ?? null;
+  const secondaryItem = primaryItem ? queue.find((item) => item.id !== primaryItem.id) : undefined;
+  const visibleItems = primaryItem ? (secondaryItem ? [primaryItem, secondaryItem] : [primaryItem]) : [];
+  const statusCopy = activeQueueCount > 0
+    ? `${queue.length} file${queue.length === 1 ? '' : 's'} in queue`
+    : errorCount > 0
+      ? `${errorCount} need${errorCount === 1 ? 's' : ''} attention`
+      : 'Finishing upload';
+
+if queue.length > 0
+  section(
+    ~ className={[
+    ~   'invisible fixed bottom-[18px] left-[255px] right-[340px] z-[70] mx-auto max-w-[720px] translate-y-[calc(100%+36px)] rounded-2xl border border-sidebar-border bg-surface/95 px-[13px] pb-[13px] pt-2 opacity-0 shadow-[0_22px_60px_rgba(24,30,55,0.2)] backdrop-blur-[18px] transition-[transform,opacity,visibility] [transition-duration:280ms,180ms,0s] [transition-delay:0s,0s,280ms] ease-[cubic-bezier(0.22,1,0.36,1)] dark:rounded-none dark:border-[#0b0b0b] dark:bg-[#2c2c2c]/95 dark:shadow-[inset_0_1px_0_#454545,0_18px_50px_#111] max-[1320px]:left-[235px] max-[1320px]:right-[312px] max-[1100px]:left-[235px] max-[1100px]:right-5 max-[820px]:bottom-3 max-[820px]:left-3 max-[820px]:right-3',
+    ~   isOpen && 'visible translate-y-0 opacity-100 [transition-delay:0s]'
+    ~ ]}
+    ~ aria-labelledby="queue-title"
+    ~ aria-hidden={!isOpen}
+    ~ aria-live="polite"
+    ~ inert={!isOpen}
+    ~ )
+    div(className="mx-auto mb-[5px] h-1 w-9 rounded-full bg-muted" aria-hidden="true")
+    div(className="mx-0.5 mb-2.5 flex items-center justify-between gap-[18px]")
+      div
+        span(className="mb-[3px] block text-[8px] font-[720] uppercase tracking-[0.09em] text-brand") #{errorCount > 0 ? 'Needs attention' : 'Live processing'}
+        h2#queue-title(className="m-0 text-sm tracking-[-0.025em]") Upload queue
+      div(className="flex items-center gap-2.5 text-[9.5px] text-muted-foreground max-[620px]:[&>span]:hidden")
+        span #{statusCopy}
+        button(className="grid size-7 cursor-pointer place-items-center rounded-lg border-0 bg-muted p-0 text-muted-foreground" type="button" onClick={onClose} aria-label="Hide upload queue")
+          Icon(name="chevron-down" size={18})
+
+    div(className={['grid isolate', visibleItems.length > 1 && 'pt-[9px]']})
+      each item, index in visibleItems key item.id
+        article(
+          ~ className={[
+          ~   'relative z-[2] col-start-1 row-start-1 flex min-h-[75px] items-center gap-[11px] rounded-[11px] border border-sidebar-border bg-surface px-3 py-[11px] shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:rounded-none dark:border-[#111] dark:bg-[#303030] dark:shadow-[inset_0_1px_0_#454545] max-[620px]:gap-[9px] max-[620px]:p-2.5',
+          ~   index === 1 && 'pointer-events-none z-[1] -translate-y-[9px] scale-[0.97] opacity-70'
+          ~ ]}
+          ~ aria-hidden={index === 1}
+          ~ inert={index === 1}
+          ~ )
+          div(className="grid size-[43px] shrink-0 place-items-center overflow-hidden rounded-[10px] bg-brand-soft text-brand [&>div]:flex [&_img]:size-full [&_img]:object-cover")
+            if item.previewUrl
+              img(src={item.previewUrl} alt="" width={24} height={24})
+            else
+              Icon(name={getFileIcon(item.file.name, item.file.type)})
+          div.min-w-0.flex-1
+            div(className="flex items-center gap-2 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-1")
+              strong(className="max-w-[430px] overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] text-foreground" title={item.file.name}) #{item.file.name}
+              if item.classification
+                CategoryPill(category={item.classification.category})
+            div(className="mt-1.5 flex flex-wrap items-center gap-[5px] text-[8.75px] text-muted-foreground")
+              span #{formatBytes(item.file.size)}
+              span •
+              span #{STATUS_COPY[item.status]}
+              if item.classification
+                fragment
+                  span •
+                  span #{item.classification.confidence}% match
+            if item.error
+              p(className="mb-0 mt-[5px] text-[8.75px] text-destructive") #{item.error}
+            div(className="mt-2 h-[3px] overflow-hidden rounded-full bg-muted" aria-hidden="true")
+              span(
+                ~ className={['block h-full rounded-[inherit] bg-brand transition-[width] duration-200', item.status === 'error' && '!bg-destructive']}
+                ~ style={{ width: `${item.status === 'error' ? 100 : item.progress}%` }}
+                ~ )
+          div(className="grid size-[26px] shrink-0 place-items-center rounded-full bg-success/15 text-positive max-[620px]:hidden [&>div]:flex" aria-label={STATUS_COPY[item.status]})
+            if item.status === 'done'
+              Icon(name="check" size={18})
+            elseif item.status === 'error'
+              Icon(name="alert-fill" size={18})
+            else
+              Icon(name="spinner-ring")
+          if item.status === 'error'
+            button(className="grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-brand-soft hover:text-brand" type="button" onClick={() => retryItem(item.id)} aria-label={`Retry ${item.file.name}`})
+              Icon(name="refresh" size={16})
+          if item.status === 'queued' || item.status === 'done' || item.status === 'error'
+            button(
+              ~ className="grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-brand-soft hover:text-brand"
+              ~ type="button"
+              ~ onClick={() => removeItem(item.id)}
+              ~ aria-label={`Remove ${item.file.name} from queue`}
+              ~ )
+              Icon(name="close" size={17})

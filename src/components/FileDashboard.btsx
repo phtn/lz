@@ -1,0 +1,291 @@
+module
+  "use strong";
+  interface FileDashboardProps {
+    initialLibrary?: StoredFile[];
+    initialStorageNotice?: string;
+  }
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'octane'
+import type { CategoryName, QueueItem, StoredFile } from '@/types/file'
+import { analyzeFile } from '@/utils/helpers'
+import DropZone from './DropZone.btsx'
+import FileDetails from './FileDetails.btsx'
+import {Icon} from '@/lib/icons'
+import Library from './Library.btsx'
+import MobileHeader from './MobileHeader.btsx'
+import Queue from './Queue.btsx'
+import Sidebar from './Sidebar.btsx'
+
+props { initialLibrary = [], initialStorageNotice = '' }: FileDashboardProps
+setup
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [library, setLibrary, getLibrary] = useState<StoredFile[]>(initialLibrary);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDropZoneExpanded, setIsDropZoneExpanded] = useState(false);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState<CategoryName>('All');
+  const [storageNotice, setStorageNotice] = useState(initialStorageNotice);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [selectedFileId, setSelectedFileId, getSelectedFileId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const queueRef = useRef<QueueItem[]>([]);
+  const processingRef = useRef(false);
+
+  const openQueueSheet = useCallback(() => setIsQueueOpen(true), []);
+  const closeQueueSheet = useCallback(() => setIsQueueOpen(false), []);
+
+  const syncQueue = useCallback((update: (items: QueueItem[]) => QueueItem[]) => {
+    const next = update(queueRef.current);
+    queueRef.current = next;
+    setQueue(next);
+  }, []);
+
+  const updateQueueItem = useCallback((id: string, changes: Partial<QueueItem>) => {
+    syncQueue((items) => items.map((item) => item.id === id ? { ...item, ...changes } : item));
+  }, [syncQueue]);
+
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', focusSearch);
+    return () => window.removeEventListener('keydown', focusSearch);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      for (const item of queueRef.current) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      }
+    };
+  }, []);
+
+  const processQueue = useCallback(async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    try {
+      while (true) {
+        const item = queueRef.current.find((candidate) => candidate.status === 'queued');
+        if (!item) break;
+
+        try {
+          updateQueueItem(item.id, { status: 'reading', progress: 4, error: undefined });
+          const classification = await analyzeFile(item.file, (progress) => {
+            updateQueueItem(item.id, { status: 'reading', progress: Math.min(82, progress) });
+          });
+
+          updateQueueItem(item.id, { status: 'classifying', progress: 88, classification });
+          await new Promise((resolve) => window.setTimeout(resolve, 280));
+          updateQueueItem(item.id, { status: 'uploading', progress: 93 });
+
+          const formData = new FormData();
+          formData.append('file', item.file);
+          formData.append('category', classification.category);
+          formData.append('kind', classification.kind);
+          formData.append('confidence', String(classification.confidence));
+          formData.append('excerpt', classification.excerpt);
+
+          const response = await fetch('/api/files', { method: 'POST', body: formData });
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({})) as { error?: string };
+            throw new Error(payload.error ?? 'Upload could not be completed');
+          }
+
+          const payload = await response.json() as { file: StoredFile };
+          setLibrary((current) => [payload.file, ...current.filter((file) => file.id !== payload.file.id)]);
+          setStorageNotice('');
+          if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+          syncQueue((items) => items.filter((candidate) => candidate.id !== item.id));
+        } catch (error) {
+          updateQueueItem(item.id, {
+            status: 'error',
+            progress: 0,
+            error: error instanceof Error ? error.message : 'Something went wrong'
+          });
+        }
+      }
+    } finally {
+      processingRef.current = false;
+    }
+
+    if (!queueRef.current.some((item) => item.status === 'error')) setIsQueueOpen(false);
+  }, [syncQueue, updateQueueItem]);
+
+  const addFiles = useCallback((fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter((file) => file.size > 0);
+    if (files.length === 0) return;
+
+    const nextItems: QueueItem[] = files.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      status: 'queued',
+      progress: 0,
+      previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+    }));
+
+    openQueueSheet();
+    syncQueue((current) => [...current, ...nextItems]);
+    window.setTimeout(() => void processQueue(), 0);
+  }, [openQueueSheet, processQueue, syncQueue]);
+
+  const retryItem = useCallback((id: string) => {
+    openQueueSheet();
+    updateQueueItem(id, { status: 'queued', error: undefined, progress: 0 });
+    window.setTimeout(() => void processQueue(), 0);
+  }, [openQueueSheet, processQueue, updateQueueItem]);
+
+  const removeQueueItem = useCallback((id: string) => {
+    const item = queueRef.current.find((candidate) => candidate.id === id);
+    if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    syncQueue((items) => items.filter((candidate) => candidate.id !== id));
+    if (queueRef.current.length === 0) closeQueueSheet();
+  }, [closeQueueSheet, syncQueue]);
+
+  const selectCategory = useCallback((category: CategoryName) => {
+    setActiveCategory(category);
+    setSelectedFileId(null);
+  }, []);
+
+  const deleteStoredFile = useCallback(async (id: string) => {
+    const snapshot = getLibrary();
+    const removedIndex = snapshot.findIndex((file) => file.id === id);
+    const removedFile = snapshot[removedIndex];
+    const wasSelected = getSelectedFileId() === id;
+    if (!removedFile) return;
+
+    setLibrary((current) => current.filter((file) => file.id !== id));
+    if (wasSelected) setSelectedFileId(null);
+
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (response.ok) return;
+    } catch {
+      // The rollback below restores only this file, preserving concurrent changes.
+    }
+
+    setLibrary((current) => {
+      if (current.some((file) => file.id === id)) return current;
+      const next = [...current];
+      next.splice(Math.min(removedIndex, next.length), 0, removedFile);
+      return next;
+    });
+    if (wasSelected && getSelectedFileId() === null) setSelectedFileId(id);
+    setStorageNotice('That file could not be removed. Please try again.');
+  }, [getLibrary, getSelectedFileId]);
+
+  const filteredLibrary = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return library.filter((file) => {
+      const categoryMatches = activeCategory === 'All' || file.category === activeCategory;
+      const searchMatches = !needle || `${file.name} ${file.kind} ${file.category} ${file.excerpt}`.toLowerCase().includes(needle);
+      return categoryMatches && searchMatches;
+    });
+  }, [activeCategory, library, search]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<CategoryName, number>();
+    for (const file of library) counts.set(file.category, (counts.get(file.category) ?? 0) + 1);
+    return counts;
+  }, [library]);
+
+  const activeQueueCount = queue.filter((item) => item.status !== 'done' && item.status !== 'error').length;
+  const selectedFile = useMemo(
+    () => library.find((file) => file.id === selectedFileId) ?? null,
+    [library, selectedFileId]
+  );
+
+div(className="min-h-screen dark:bg-[#181818]")
+  MobileHeader(
+    ~ search={search}
+    ~ setSearch={setSearch}
+    ~ fileInputRef={fileInputRef}
+    ~ searchInputRef={searchInputRef}
+    ~ )
+
+  div(className="grid h-[calc(100vh-72px)] grid-cols-[218px_minmax(0,1fr)_304px] gap-[18px] p-[18px] dark:h-[calc(100vh-52px)] dark:grid-cols-[280px_minmax(0,1fr)_330px] dark:gap-[2px] dark:bg-[#090909] dark:p-[2px] max-[1320px]:grid-cols-[198px_minmax(0,1fr)_276px] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_310px] max-[1100px]:grid-cols-[198px_minmax(0,1fr)] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)] max-[820px]:h-[calc(100vh-64px)] max-[820px]:grid-cols-[minmax(0,1fr)] max-[820px]:p-3 max-[820px]:dark:h-[calc(100vh-64px)] max-[820px]:dark:grid-cols-[minmax(0,1fr)] max-[820px]:dark:gap-px max-[820px]:dark:p-px")
+    Sidebar(
+      ~ activeQueueCount={activeQueueCount}
+      ~ library={library}
+      ~ activeCategory={activeCategory}
+      ~ setActiveCategory={selectCategory}
+      ~ categoryCounts={categoryCounts}
+      ~ search={search}
+      ~ setSearch={setSearch}
+      ~ searchInputRef={searchInputRef}
+      ~ )
+
+    main(className="h-full min-h-0 overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] dark:bg-[#090909]")
+      div(className="mx-auto w-[min(100%,1120px)] py-1.5 pb-12 dark:grid dark:h-full dark:w-full dark:grid-rows-[auto_minmax(0,1fr)] dark:gap-[2px] dark:bg-[#090909] dark:py-0 dark:pb-0 max-[820px]:pb-8 max-[820px]:dark:gap-px max-[820px]:dark:pb-0")
+        div(
+          ~ className={[
+          ~   'grid transition-[grid-template-rows,opacity,transform,visibility] ease-[cubic-bezier(0.22,1,0.36,1)] dark:hidden',
+          ~   isDropZoneExpanded
+          ~     ? 'invisible grid-rows-[minmax(0,0fr)] -translate-y-7 opacity-0 [transition-duration:480ms,180ms,360ms,0s] [transition-delay:0s,0s,0s,480ms]'
+          ~     : 'visible grid-rows-[minmax(0,1fr)] translate-y-0 opacity-100 [transition-duration:520ms,220ms,420ms,0s] [transition-delay:0s,0s,0s,0s]'
+          ~ ]}
+          ~ aria-hidden={isDropZoneExpanded}
+          ~ inert={isDropZoneExpanded}
+          ~ )
+          header(className="flex min-h-0 items-end justify-between gap-6 overflow-hidden px-0.5 pb-[18px] pt-[3px] max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-[13px]")
+            div(className="hidden")
+              span(className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.09em] text-brand")
+                Icon(name="sparkles")
+                | Smart workspace
+              h1(className="mb-0 mt-[7px] text-[clamp(25px,3vw,32px)] leading-none tracking-[-0.045em]") #{activeCategory === 'All' ? 'All files' : activeCategory}
+              p(className="mb-0 mt-[9px] text-[11.5px] text-muted-foreground") Your local library, classified and ready when you need it.
+            div(className="hidden _flex items-center gap-2 max-[620px]:w-full [&>span]:grid [&>span]:min-w-[74px] [&>span]:gap-0.5 [&>span]:rounded-[10px] [&>span]:border [&>span]:border-sidebar-border [&>span]:bg-surface/70 [&>span]:px-3 [&>span]:py-[9px] [&>span]:text-right [&>span]:text-[9.5px] [&>span]:text-muted-foreground max-[620px]:[&>span]:flex-1 max-[620px]:[&>span]:text-left [&_strong]:text-sm [&_strong]:text-foreground" aria-label="Library summary")
+              span
+                strong #{filteredLibrary.length}
+                | files
+              span
+                strong #{categoryCounts.size}
+                | folders
+
+        DropZone(
+          ~ isDragging={isDragging}
+          ~ setIsDragging={setIsDragging}
+          ~ isExpanded={isDropZoneExpanded}
+          ~ onExpandedChange={setIsDropZoneExpanded}
+          ~ addFiles={addFiles}
+          ~ storageNotice={storageNotice}
+          ~ fileInputRef={fileInputRef}
+          ~ )
+
+        div(
+          ~ className={[
+          ~   'grid min-h-0 transition-[grid-template-rows,opacity,transform,visibility] ease-[cubic-bezier(0.22,1,0.36,1)]',
+          ~   isDropZoneExpanded
+          ~     ? 'invisible grid-rows-[minmax(0,0fr)] translate-y-[34px] opacity-0 [transition-duration:560ms,200ms,420ms,0s] [transition-delay:0s,0s,0s,560ms]'
+          ~     : 'visible grid-rows-[minmax(0,1fr)] translate-y-0 opacity-100 [transition-duration:560ms,220ms,420ms,0s] [transition-delay:0s,0s,0s,0s]'
+          ~ ]}
+          ~ aria-hidden={isDropZoneExpanded}
+          ~ inert={isDropZoneExpanded}
+          ~ )
+          div(className="min-h-0 overflow-hidden dark:h-full")
+            Library(
+              ~ filteredLibrary={filteredLibrary}
+              ~ categoryCounts={categoryCounts}
+              ~ activeCategory={activeCategory}
+              ~ setActiveCategory={selectCategory}
+              ~ search={search}
+              ~ deleteFile={deleteStoredFile}
+              ~ selectedFileId={selectedFileId}
+              ~ selectFile={(id) => setSelectedFileId(id)}
+              ~ onAddFiles={() => fileInputRef.current?.click()}
+              ~ )
+
+    FileDetails(file={selectedFile} onClose={() => setSelectedFileId(null)} deleteFile={deleteStoredFile})
+
+  Queue(
+    ~ queue={queue}
+    ~ activeQueueCount={activeQueueCount}
+    ~ removeItem={removeQueueItem}
+    ~ retryItem={retryItem}
+    ~ isOpen={isQueueOpen}
+    ~ onClose={closeQueueSheet}
+    ~ )
