@@ -207,7 +207,7 @@ div(className="min-h-screen dark:bg-[#181818]")
     ~ searchInputRef={searchInputRef}
     ~ )
 
-  div(className="grid h-[calc(100vh-72px)] grid-cols-[218px_minmax(0,1fr)_304px] gap-[18px] p-[18px] dark:h-[calc(100vh-52px)] dark:grid-cols-[280px_minmax(0,1fr)_330px] dark:gap-[2px] dark:bg-[#090909] dark:p-[2px] max-[1320px]:grid-cols-[198px_minmax(0,1fr)_276px] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_310px] max-[1100px]:grid-cols-[198px_minmax(0,1fr)] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)] max-[820px]:h-[calc(100vh-64px)] max-[820px]:grid-cols-[minmax(0,1fr)] max-[820px]:p-3 max-[820px]:dark:h-[calc(100vh-64px)] max-[820px]:dark:grid-cols-[minmax(0,1fr)] max-[820px]:dark:gap-px max-[820px]:dark:p-px")
+  div(className="grid h-[calc(100vh-72px)] grid-cols-[218px_minmax(0,1fr)_304px] gap-[18px] p-[18px] dark:h-[calc(100vh-52px)] dark:grid-cols-[280px_minmax(0,1fr)_330px] dark:gap-px dark:bg-[#090909] dark:p-px max-[1320px]:grid-cols-[198px_minmax(0,1fr)_276px] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_310px] max-[1100px]:grid-cols-[198px_minmax(0,1fr)] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)] max-[820px]:h-[calc(100vh-64px)] max-[820px]:grid-cols-[minmax(0,1fr)] max-[820px]:p-3 max-[820px]:dark:h-[calc(100vh-64px)] max-[820px]:dark:grid-cols-[minmax(0,1fr)] max-[820px]:dark:gap-px max-[820px]:dark:p-px")
     Sidebar(
       ~ activeQueueCount={activeQueueCount}
       ~ library={library}
@@ -220,7 +220,7 @@ div(className="min-h-screen dark:bg-[#181818]")
       ~ )
 
     main(className="h-full min-h-0 overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] dark:bg-[#090909]")
-      div(className="mx-auto w-[min(100%,1120px)] py-1.5 pb-12 dark:grid dark:h-full dark:w-full dark:grid-rows-[auto_minmax(0,1fr)] dark:gap-[2px] dark:bg-[#090909] dark:py-0 dark:pb-0 max-[820px]:pb-8 max-[820px]:dark:gap-px max-[820px]:dark:pb-0")
+      div(className="mx-auto w-[min(100%,1120px)] py-1.5 pb-12 dark:grid dark:h-full dark:w-full dark:grid-rows-[auto_minmax(0,1fr)] dark:gap-px dark:bg-[#090909] dark:py-0 dark:pb-0 max-[820px]:pb-8 max-[820px]:dark:gap-px max-[820px]:dark:pb-0")
         div(
           ~ className={[
           ~   'grid transition-[grid-template-rows,opacity,transform,visibility] ease-[cubic-bezier(0.22,1,0.36,1)] dark:hidden',

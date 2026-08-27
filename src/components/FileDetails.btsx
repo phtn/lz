@@ -28,7 +28,7 @@ fragment
 
   aside(
     ~ className={[
-    ~   'h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.5px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b]',
+    ~   'h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b]',
     ~   file
     ~     ? 'max-[1100px]:fixed max-[1100px]:bottom-[18px] max-[1100px]:right-[18px] max-[1100px]:top-[86px] max-[1100px]:z-[65] max-[1100px]:h-auto max-[1100px]:w-[min(330px,calc(100vw-36px))] max-[1100px]:shadow-[0_16px_40px_rgba(25,31,55,0.1)] max-[820px]:bottom-3 max-[820px]:left-3 max-[820px]:right-3 max-[820px]:top-auto max-[820px]:h-[min(72vh,620px)] max-[820px]:w-auto max-[820px]:rounded-[18px]'
     ~     : 'max-[1100px]:hidden'

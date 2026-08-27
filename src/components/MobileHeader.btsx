@@ -25,12 +25,11 @@ header(
   strong(className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 text-[13px] font-[650] tracking-[-0.01em] text-[#d4d4d4] dark:block max-[820px]:dark:hidden") DropZone Dashboard
 
   div(className="inline-flex items-center gap-2.5 text-[19px] font-[760] tracking-[-0.045em] text-foreground dark:invisible max-[820px]:dark:visible max-[820px]:[&_span:last-child]:hidden" aria-label="DropZone home")
-    Icon(name="re-up.ph" className="size-4")
-    span.tracking-wider dropzone
+    Icon(name="chute" size={24})
+    span.tracking-normal dropzone
 
   nav(className="flex items-center gap-[5px] dark:hidden max-[820px]:hidden [&_button]:inline-flex [&_button]:h-10 [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-2 [&_button]:rounded-[10px] [&_button]:border [&_button]:border-transparent [&_button]:bg-transparent [&_button]:px-3.5 [&_button]:text-[13px] [&_button]:font-[570] [&_button]:text-muted-foreground [&_button]:transition-all [&_button]:duration-150 [&_button:hover]:bg-accent [&_button:hover]:text-foreground max-[1100px]:[&_button:nth-child(3)]:hidden" aria-label="Workspace navigation")
-    Button(size="sm")
-      Icon(name="files")
+    Button(size="sm" variant='default'l className='rounded-full!')
       span.font-normal.text-base Files
     button(type="button")
       Icon(name="activity")
@@ -56,7 +55,7 @@ header(
     // span(className="inline-flex items-center gap-[7px] whitespace-nowrap text-[11px] text-muted-foreground max-[1320px]:hidden")
     //   span(className="size-[7px] rounded-full bg-positive shadow-[0_0_0_3px_color-mix(in_oklab,var(--positive)_18%,transparent)]")
     //   | Private OCR
-    Button(variant='dark' className="relative grid size-[38px] cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
+    Button(variant='' className="rounded-full aspect-square" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
       Icon(name="theme" className="text-muted-foreground")
     // button(className="relative grid size-[38px] cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground max-[820px]:hidden" type="button" aria-label="Notifications")
     //   Icon(name="bell")
