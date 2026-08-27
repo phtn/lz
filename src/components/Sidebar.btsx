@@ -24,12 +24,12 @@ setup
   const visibleCategories = (Object.keys(CATEGORY_META) as CategoryName[])
     .filter((category) => category !== 'All' && (categoryCounts.get(category) ?? 0) > 0);
 
-aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface px-[11px] pb-3 pt-[13px] shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:border-[0.5px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
-  div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto dark:rounded-[4px] dark:bg-[#272727] dark:p-3 dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
-    label(className="mb-3 hidden h-9 items-center gap-2 border border-[#151515] bg-[#202020] px-2.5 text-[#9a9a9a] shadow-[inset_0_1px_2px_#111] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4")
-      Icon(name="search")
+aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface pb-3 shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
+  div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto _dark:rounded-[4px] dark:bg-[#272727] dark:p-0 dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
+    label(className="mb-3 px-1.5 hidden h-9 items-center gap-2 border-[0.33px] border-[#151515] bg-[#202020] text-[#9a9a9a] shadow-[inset_0_1px_2px_#111] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4")
+      Icon(name="search" size={8} className="size-3.5")
       input(
-        ~ className="min-w-0 flex-1 border-0 bg-transparent text-[11px] text-[#d8d8d8] outline-none placeholder:text-[#777]"
+        ~ className="min-w-0 flex-1 border-0 bg-transparent text-sm text-muted-foreground outline-none placeholder:text-[#777]"
         ~ ref={searchInputRef}
         ~ type="search"
         ~ value={search}
@@ -37,9 +37,9 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         ~ placeholder="Search..."
         ~ aria-label="Search your files"
         ~ )
-    nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent [&>button:hover]:text-foreground" aria-label="File navigation")
+    nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent/50 [&>button:hover]:text-foreground px-2" aria-label="File navigation")
       button(
-        ~ className={activeCategory === 'All' ? '!bg-brand-soft !font-[660] !text-brand dark:!bg-[#3d3d3d] dark:!text-[#d2d2d2] dark:shadow-[inset_3px_0_0_#bdbdbd]' : ''}
+        ~ className={activeCategory === 'All' ? 'text-brand! dark:!bg-[#3d3d3d] dark:!text-[#d2d2d2]' : 'hover:bg-accent/50'}
         ~ type="button"
         ~ onClick={() => setActiveCategory('All')}
         ~ )
@@ -58,7 +58,7 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         if activeQueueCount > 0
           span(className="inline-grid h-5 min-w-[22px] place-items-center rounded-full bg-brand px-1.5 text-[9.5px] font-bold text-brand-foreground") #{activeQueueCount}
 
-    div(className="mt-6 dark:mt-4")
+    div(className="mt-6 dark:mt-4 px-1.5")
       div(className="flex items-center justify-between px-2 pb-[9px] text-[9.5px] font-[680] uppercase tracking-[0.09em] text-muted-foreground dark:text-[#aaa]")
         span Smart folders
         Icon(name="sparkles")
@@ -66,8 +66,8 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         each category in visibleCategories key category
           button(
             ~ className={[
-            ~   'grid h-[35px] w-full cursor-pointer grid-cols-[8px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg border-0 bg-transparent px-[11px] text-left text-[11.5px] text-muted-foreground hover:bg-accent hover:text-foreground [&>span:last-child]:text-[10px] [&>span:last-child]:text-muted-foreground',
-            ~   activeCategory === category && 'bg-accent font-[650] text-foreground dark:bg-[#424242] dark:text-[#d2d2d2] dark:shadow-[inset_3px_0_0_#bdbdbd]'
+            ~   'grid h-[35px] w-full cursor-pointer grid-cols-[8px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg border-0 bg-transparent px-[11px] text-left text-[11.5px] text-muted-foreground hover:bg-accent/50 hover:text-foreground [&>span:last-child]:text-[10px] [&>span:last-child]:text-muted-foreground',
+            ~   activeCategory === category && 'bg-brand font-[650] text-foreground dark:bg-[#424242] dark:text-[#d2d2d2]'
             ~ ]}
             ~ type="button"
             ~ onClick={() => setActiveCategory(category)}
@@ -78,7 +78,7 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         empty
           p(className="mx-2.5 my-1.5 text-[10.5px] leading-[1.45] text-muted-foreground") Folders appear as files are sorted.
 
-  div(className="mt-auto grid gap-3 pt-[22px] dark:mt-0 dark:shrink-0 dark:rounded-[4px] dark:border-[0.5px] dark:border-[#050505] dark:bg-[#272727] dark:p-3 dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
+  div(className="mt-auto grid gap-3 pt-[22px] dark:mt-0 dark:shrink-0 dark:rounded-[4px] dark:bg-[#272727]")
     nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent [&>button:hover]:text-foreground" aria-label="Account navigation")
       button(type="button")
         Icon(name="settings-fill")
@@ -87,7 +87,7 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         Icon(name="trash-delete")
         | Deleted files
 
-    div(className="rounded-[11px] border border-sidebar-border bg-card p-3 dark:rounded-none dark:border-[#111] dark:bg-[#222] dark:shadow-[inset_0_1px_0_#353535]")
+    div(className="rounded-[11px] border border-sidebar-border bg-card p-4 dark:rounded-none dark:bg-[#222]")
       div(className="flex items-center justify-between text-[10px] text-muted-foreground")
         span(className="inline-flex items-center gap-[7px] font-[630] text-foreground")
           Icon(name="hard-drive")

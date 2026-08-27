@@ -5,16 +5,35 @@ module
     initialStorageNotice?: string;
   }
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'octane'
+  const LazyFileDetails = lazy(() => import('./FileDetails.btsx'));
+  const LazyQueue = lazy(() => import('./Queue.btsx'));
+
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'octane'
 import type { CategoryName, QueueItem, StoredFile } from '@/types/file'
 import { analyzeFile } from '@/utils/helpers'
 import DropZone from './DropZone.btsx'
-import FileDetails from './FileDetails.btsx'
 import {Icon} from '@/lib/icons'
 import Library from './Library.btsx'
 import MobileHeader from './MobileHeader.btsx'
-import Queue from './Queue.btsx'
 import Sidebar from './Sidebar.btsx'
+
+component EmptyFileDetails
+  aside(className="h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b] max-[1100px]:hidden" aria-label="File details")
+    div(className="flex min-h-[54px] items-center justify-between border-b border-sidebar-border px-[15px] text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground dark:min-h-[50px] dark:border-[#0b0b0b] dark:bg-[#303030] dark:text-[#b7b7b7]")
+      span File intelligence
+    div(className="grid min-h-[calc(100%-54px)] content-center justify-items-center p-7 text-center")
+      span(className="grid size-12 place-items-center rounded-[14px] bg-muted text-muted-foreground")
+        Icon(name="search")
+      h2(className="mb-0 mt-3.5 text-xs text-foreground") Select a file
+      p(className="mb-0 mt-[7px] max-w-[205px] text-[9.5px] leading-[1.55] text-muted-foreground") Choose a file to see its classification, content summary, and local activity.
+
+component FileDetailsLoadError
+  aside(className="h-full min-h-0 rounded-2xl border border-sidebar-border bg-surface p-7 text-center shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b] max-[1100px]:hidden" role="alert")
+    div(className="grid h-full content-center justify-items-center")
+      span(className="grid size-12 place-items-center rounded-[14px] bg-destructive/10 text-destructive")
+        Icon(name="alert-fill")
+      h2(className="mb-0 mt-3.5 text-xs text-foreground") Details unavailable
+      p(className="mb-0 mt-[7px] max-w-[205px] text-[9.5px] leading-[1.55] text-muted-foreground") Select the file again to retry loading its details.
 
 props { initialLibrary = [], initialStorageNotice = '' }: FileDashboardProps
 setup
@@ -279,13 +298,27 @@ div(className="min-h-screen dark:bg-[#181818]")
               ~ onAddFiles={() => fileInputRef.current?.click()}
               ~ )
 
-    FileDetails(file={selectedFile} onClose={() => setSelectedFileId(null)} deleteFile={deleteStoredFile})
+    if selectedFile
+      try
+        LazyFileDetails(file={selectedFile} onClose={() => setSelectedFileId(null)} deleteFile={deleteStoredFile})
+      pending
+        EmptyFileDetails
+      catch error
+        FileDetailsLoadError
+    else
+      EmptyFileDetails
 
-  Queue(
-    ~ queue={queue}
-    ~ activeQueueCount={activeQueueCount}
-    ~ removeItem={removeQueueItem}
-    ~ retryItem={retryItem}
-    ~ isOpen={isQueueOpen}
-    ~ onClose={closeQueueSheet}
-    ~ )
+  if queue.length > 0
+    try
+      LazyQueue(
+        ~ queue={queue}
+        ~ activeQueueCount={activeQueueCount}
+        ~ removeItem={removeQueueItem}
+        ~ retryItem={retryItem}
+        ~ isOpen={isQueueOpen}
+        ~ onClose={closeQueueSheet}
+        ~ )
+    pending
+      span.sr-only(role="status") Preparing upload queue…
+    catch error
+      div(className="fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-lg border border-destructive/20 bg-surface px-4 py-2 text-[10px] text-destructive shadow-lg" role="alert") Upload queue unavailable. Add the files again to retry.
