@@ -7,13 +7,32 @@ module
     searchInputRef: { current: HTMLInputElement | null };
   }
 
-import { use } from 'octane'
+import { use, useState, useSyncExternalStore } from 'octane'
 import { ThemeContext } from '@/context/theme'
+import { getCurrentUser, getServerAuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
 import {Icon} from '@/lib/icons'
 import {Button} from "./ui";
 
 props { search, setSearch, fileInputRef, searchInputRef }: MobileHeaderProps
-setup const { toggleTheme } = use(ThemeContext);
+setup
+  const { toggleTheme } = use(ThemeContext);
+  const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  const handleAuthClick = async () => {
+    setAuthError('');
+    setIsAuthenticating(true);
+
+    try {
+      if (currentUser) await signOutCurrentUser();
+      else await signInWithGoogle();
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Authentication could not be completed.');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
 
 header(
   ~ className="relative z-50 grid h-[72px] dark:rounded-[5px] grid-cols-[218px_minmax(330px,1fr)_minmax(220px,350px)_auto] items-center gap-[18px] border-b dark:border-x-[1.5px] dark:border-t-[2.5px] dark:border-[#050505] border-sidebar-border bg-background/95 px-5 backdrop-blur-[18px] dark:h-[52px] dark:grid-cols-[280px_minmax(0,1fr)_auto] dark:gap-0 dark:border-[#0a0a0a] dark:bg-[#2d2d2d] dark:px-4 dark:shadow-[inset_0_-1px_0_#3a3a3a] dark:backdrop-blur-none max-[1320px]:grid-cols-[198px_minmax(280px,1fr)_minmax(200px,310px)_auto] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_auto] max-[1100px]:grid-cols-[190px_minmax(250px,1fr)_minmax(210px,320px)_auto] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)_auto] max-[820px]:h-16 max-[820px]:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:gap-3 max-[820px]:px-3.5 max-[820px]:dark:h-16 max-[820px]:dark:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:dark:gap-3 max-[820px]:dark:px-3.5"
@@ -55,6 +74,21 @@ header(
     //   | Private OCR
     Button(variant='' className="rounded-full aspect-square" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
       Icon(name="theme" className="text-muted-foreground")
+    Button(
+      ~ size="sm"
+      ~ variant="dark"
+      ~ type="button"
+      ~ icon="person"
+      ~ label={currentUser ? 'Sign out' : 'Sign in with Google'}
+      ~ pending={isAuthenticating}
+      ~ pendingLabel={currentUser ? 'Signing out…' : 'Signing in…'}
+      ~ onClick={() => void handleAuthClick()}
+      ~ className="max-[620px]:size-[38px] max-[620px]:px-0 max-[620px]:[&_span_span]:hidden"
+      ~ aria-label={currentUser ? `Sign out ${currentUser.displayName ?? currentUser.email ?? 'current user'}` : 'Sign in with Google'}
+      ~ title={currentUser ? `Signed in as ${currentUser.displayName ?? currentUser.email ?? 'Google user'}` : 'Sign in with Google'}
+      ~ )
+    if authError
+      p(className="absolute right-4 top-[calc(100%+8px)] z-50 m-0 max-w-sm rounded-lg border border-destructive/20 bg-surface px-3 py-2 text-[10px] text-destructive shadow-lg" role="alert") #{authError}
     // button(className="relative grid size-[38px] cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground max-[820px]:hidden" type="button" aria-label="Notifications")
     //   Icon(name="bell")
     //   span(className="absolute right-[9px] top-2 size-[5px] rounded-full border-[1.5px] border-background bg-brand")

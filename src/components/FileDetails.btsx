@@ -47,7 +47,7 @@ fragment
           figure(className="mb-4 overflow-hidden rounded-xl border border-sidebar-border bg-card p-2 dark:rounded-none dark:border-[#111] dark:bg-[#202020] dark:p-1.5 dark:shadow-[inset_0_1px_3px_#111]")
             img(
               ~ className="aspect-[4/3] w-full rounded-lg bg-background object-contain dark:rounded-none dark:bg-[#191919]"
-              ~ src={`/api/files/${encodeURIComponent(file.id)}?preview=1`}
+              ~ src={file.url}
               ~ alt={`Preview of ${file.name}`}
               ~ loading="lazy"
               ~ )
@@ -66,7 +66,7 @@ fragment
               | #{formatFileDate(file.createdAt)}
 
         div(className="mt-4 grid grid-cols-[minmax(0,1fr)_38px] gap-2 [&>a]:inline-flex [&>a]:h-[37px] [&>a]:cursor-pointer [&>a]:items-center [&>a]:justify-center [&>a]:gap-[7px] [&>a]:rounded-[9px] [&>a]:border [&>a]:border-brand [&>a]:bg-brand [&>a]:text-[10px] [&>a]:font-[650] [&>a]:text-brand-foreground [&>a]:no-underline [&>a:hover]:bg-brand-strong dark:[&>a]:rounded-sm dark:[&>a]:border-[#111] dark:[&>a]:shadow-[inset_0_1px_0_#efefef] [&>button]:inline-flex [&>button]:h-[37px] [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-center [&>button]:gap-[7px] [&>button]:rounded-[9px] [&>button]:border [&>button]:border-sidebar-border [&>button]:bg-surface [&>button]:text-[10px] [&>button]:font-[650] [&>button]:text-foreground dark:[&>button]:rounded-sm dark:[&>button]:border-[#111] dark:[&>button]:bg-[#292929] dark:[&>button]:shadow-[inset_0_1px_0_#444] [&>button:hover]:border-destructive/30 [&>button:hover]:bg-destructive/10 [&>button:hover]:text-destructive")
-          a(href={`/api/files/${encodeURIComponent(file.id)}`})
+          a(href={file.url} target="_blank" rel="noopener noreferrer")
             Icon(name="external-link")
             | Open file
           button(type="button" onClick={() => { void deleteFile(file.id); onClose(); }})

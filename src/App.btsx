@@ -7,30 +7,14 @@ import ThemeProvider from '@/components/ThemeProvider.btsx'
 
 module
   module server {
-    import { CATEGORY_NAMES, categoryFromFileType } from './constants/meta';
-    import { listStoredFiles, storageError, type FileRecord } from './server/storage';
     import type { StoredFile } from './types/file';
 
-    function toStoredFile(record: FileRecord): StoredFile {
-      const category = CATEGORY_NAMES.find((candidate) => candidate === record.category)
-        ?? categoryFromFileType(record.name, record.mimeType);
-      return { ...record, category };
-    }
-
     export async function loadInitialState() {
-      try {
-        return {
-          library: (await listStoredFiles()).map(toStoredFile),
-          storageNotice: '',
-          socialImage: '/dropzone-og.png'
-        };
-      } catch (error) {
-        return {
-          library: [] as StoredFile[],
-          storageNotice: storageError(error),
-          socialImage: '/dropzone-og.png'
-        };
-      }
+      return {
+        library: [] as StoredFile[],
+        storageNotice: '',
+        socialImage: '/dropzone-og.png'
+      };
     }
   }
 
@@ -65,7 +49,7 @@ fragment
     main(className="grid min-h-screen place-items-center p-6" aria-label="Loading file library")
       div(className="grid justify-items-center gap-3 text-center text-muted-foreground [&_h1]:m-0 [&_p]:m-0")
         Icon(name="spinner-ring" className="[&_svg]:animate-spin [&_svg]:[animation-duration:900ms]")
-        p Opening your local library…
+        p Opening your file library…
   catch error
     main(className="grid min-h-screen place-items-center p-6" role="alert")
       div(className="grid justify-items-center gap-3 text-center text-muted-foreground [&_h1]:m-0 [&_p]:m-0")

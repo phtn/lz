@@ -48,8 +48,8 @@ export type StoredFile = {
   kind: string
   confidence: number
   excerpt: string
-  objectKey: string
   createdAt: string
+  url: string
 }
 
 export type CategoryRule = {

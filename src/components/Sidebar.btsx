@@ -20,16 +20,16 @@ import {Button} from "./ui";
 props { activeQueueCount, library, activeCategory, setActiveCategory, categoryCounts, search, setSearch, searchInputRef }: SidebarProps
 setup
   const storageUsed = library.reduce((total, file) => total + file.size, 0);
-  const storagePercent = Math.min(100, (storageUsed / (256 * 1024 * 1024)) * 100);
   const visibleCategories = (Object.keys(CATEGORY_META) as CategoryName[])
     .filter((category) => category !== 'All' && (categoryCounts.get(category) ?? 0) > 0);
 
-aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface pb-3 shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
-  div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto _dark:rounded-[4px] dark:bg-[#272727] dark:p-0 dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
-    label(className="mb-3 px-1.5 hidden h-9 items-center gap-2 border-[0.33px] border-[#151515] bg-[#202020] text-[#9a9a9a] shadow-[inset_0_1px_2px_#111] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4")
-      Icon(name="search" size={8} className="size-3.5")
+
+aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface pb-3 shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:rounded-bl-md dark:border-[0.33px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
+  div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto dark:rounded-[4px] dark:bg-[#272727] dark:p-0 dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
+    label(className="mb-3 px-1.5 hidden h-11 items-center gap-2 border-b-[0.33px] border-[#121212] bg-[#20202080] text-[#9a9a9a] shadow-[inset_0_1px_2px_#222] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4")
+      // Icon(name="search" size={12} className="size-3.5!")
       input(
-        ~ className="min-w-0 flex-1 border-0 bg-transparent text-sm text-muted-foreground outline-none placeholder:text-[#777]"
+        ~ className="min-w-0 flex-1 border-0 text-sm text-muted-foreground outline-none placeholder:text-[#777]"
         ~ ref={searchInputRef}
         ~ type="search"
         ~ value={search}
@@ -78,25 +78,16 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         empty
           p(className="mx-2.5 my-1.5 text-[10.5px] leading-[1.45] text-muted-foreground") Folders appear as files are sorted.
 
-  div(className="mt-auto grid gap-3 pt-[22px] dark:mt-0 dark:shrink-0 dark:rounded-[4px] dark:bg-[#272727]")
+  div(className="mt-auto grid dark:mt-0 dark:shrink-0 dark:rounded-[4px] dark:bg-[#272727] dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
     nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent [&>button:hover]:text-foreground" aria-label="Account navigation")
-      button(type="button")
-        Icon(name="settings-fill")
+      button(type="button" className="rounded-t-[4px]! dark:bg-accent rounded-b-[2px]! h-12!")
+        Icon(name="settings")
         | Settings
-      button(type="button")
-        Icon(name="trash-delete")
-        | Deleted files
 
-    div(className="rounded-[11px] border border-sidebar-border bg-card p-4 dark:rounded-none dark:bg-[#222]")
+    div(className="rounded-[11px] dark:rounded-bl-[4px] dark:rounded-se-none border-y border-border bg-card p-4 dark:rounded-e-none dark:rounded-ss-none dark:rounded-rb-none dark:rounded-rt-[4px] dark:bg-[#222]")
       div(className="flex items-center justify-between text-[10px] text-muted-foreground")
         span(className="inline-flex items-center gap-[7px] font-[630] text-foreground")
-          Icon(name="hard-drive")
-          | Local storage
-        span #{Math.round(storagePercent)}%
-      div(className="mt-[11px] h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true")
-        span(className="block h-full rounded-[inherit] bg-brand" style={{ width: `${Math.max(storagePercent, 2)}%` }})
-      p(className="mb-0 mt-2 text-[9.5px] text-muted-foreground") #{formatBytes(storageUsed)} used of 256 MB
-
-    div(className="flex items-start gap-2 px-[9px] text-[9.5px] leading-[1.4] text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-positive")
-      Icon(name="shield-check")
-      span Stored locally and private by design
+          Icon(name="cloud" className="opacity-50")
+          | Cloud
+        span(className=" text-muted-foreground") #{formatBytes(storageUsed)}
+        span #{library.length} #{library.length <= 1 ? ' file' : ' files'}

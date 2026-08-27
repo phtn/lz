@@ -1,162 +1,106 @@
-import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
-import path from 'node:path'
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import type { CategoryName } from '@/types/file'
 
 export type FileRecord = {
   id: string
   name: string
   size: number
   mimeType: string
-  category: string
+  category: Exclude<CategoryName, 'All'>
   kind: string
   confidence: number
   excerpt: string
   objectKey: string
-  createdAt: string
+  createdAt: number
 }
 
-const dataDirectory = path.join(process.cwd(), '.dropwell-data')
-const filesDirectory = path.join(dataDirectory, 'files')
-const indexPath = path.join(dataDirectory, 'library.json')
-
-let mutationQueue = Promise.resolve()
-
-async function ensureStorage() {
-  await mkdir(filesDirectory, { recursive: true })
+type R2Config = {
+  accountId: string
+  accessKeyId: string
+  secretAccessKey: string
+  bucket: string
 }
 
-function isFileRecord(value: unknown): value is FileRecord {
-  if (!value || typeof value !== 'object') return false
-  const record = value as Partial<FileRecord>
-  return (
-    typeof record.id === 'string' &&
-    typeof record.name === 'string' &&
-    typeof record.size === 'number' &&
-    typeof record.mimeType === 'string' &&
-    typeof record.category === 'string' &&
-    typeof record.kind === 'string' &&
-    typeof record.confidence === 'number' &&
-    typeof record.excerpt === 'string' &&
-    typeof record.objectKey === 'string' &&
-    typeof record.createdAt === 'string'
+let client: S3Client | undefined
+let config: R2Config | undefined
+
+function requiredEnvironmentVariable(name: keyof NodeJS.ProcessEnv) {
+  const value = process.env[name]?.trim()
+  if (!value) throw new Error(`${name} is not configured.`)
+  return value
+}
+
+function getR2Config(): R2Config {
+  config ??= {
+    accountId: requiredEnvironmentVariable('R2_ACCOUNT_ID'),
+    accessKeyId: requiredEnvironmentVariable('R2_ACCESS_KEY_ID'),
+    secretAccessKey: requiredEnvironmentVariable('R2_SECRET_ACCESS_KEY'),
+    bucket: requiredEnvironmentVariable('R2_BUCKET_NAME')
+  }
+  return config
+}
+
+function getR2Client() {
+  const r2 = getR2Config()
+  client ??= new S3Client({
+    region: 'auto',
+    endpoint: `https://${r2.accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: r2.accessKeyId,
+      secretAccessKey: r2.secretAccessKey
+    }
+  })
+  return client
+}
+
+function inlineContentDisposition(name: string) {
+  const safeAscii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_')
+  return `inline; filename="${safeAscii}"; filename*=UTF-8''${encodeURIComponent(name)}`
+}
+
+export function createObjectKey(userId: string, uploadId: string) {
+  return `drop/${userId}/${uploadId}`
+}
+
+export async function uploadStoredFile(record: FileRecord, contents: Uint8Array) {
+  const r2 = getR2Config()
+  await getR2Client().send(new PutObjectCommand({
+    Bucket: r2.bucket,
+    Key: record.objectKey,
+    Body: contents,
+    ContentLength: record.size,
+    ContentType: record.mimeType,
+    ContentDisposition: inlineContentDisposition(record.name),
+    Metadata: {
+      uploadId: record.id
+    }
+  }))
+}
+
+export async function deleteStoredFile(objectKey: string) {
+  const r2 = getR2Config()
+  await getR2Client().send(new DeleteObjectCommand({
+    Bucket: r2.bucket,
+    Key: objectKey
+  }))
+}
+
+export async function createStoredFileUrl(objectKey: string) {
+  const r2 = getR2Config()
+  return await getSignedUrl(
+    getR2Client(),
+    new GetObjectCommand({ Bucket: r2.bucket, Key: objectKey }),
+    { expiresIn: 15 * 60 }
   )
 }
 
-async function readIndex(): Promise<FileRecord[]> {
-  await ensureStorage()
-
-  try {
-    const contents = await readFile(indexPath, 'utf8')
-    const parsed: unknown = JSON.parse(contents)
-    return Array.isArray(parsed) ? parsed.filter(isFileRecord) : []
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []
-    throw error
-  }
-}
-
-async function writeIndex(files: FileRecord[]) {
-  const temporaryPath = `${indexPath}.${crypto.randomUUID()}.tmp`
-  try {
-    await writeFile(temporaryPath, JSON.stringify(files, null, 2), 'utf8')
-    await rename(temporaryPath, indexPath)
-  } finally {
-    await unlink(temporaryPath).catch(() => {})
-  }
-}
-
-async function withMutationLock<T>(operation: () => Promise<T>): Promise<T> {
-  const previous = mutationQueue
-  let release = () => {}
-  mutationQueue = new Promise<void>((resolve) => {
-    release = resolve
-  })
-
-  await previous
-  try {
-    return await operation()
-  } finally {
-    release()
-  }
-}
-
-function filePathForKey(objectKey: string) {
-  if (!/^[0-9a-f-]{36}$/.test(objectKey)) throw new Error('Invalid file key.')
-  return path.join(filesDirectory, objectKey)
-}
-
-export async function listStoredFiles() {
-  const files = await readIndex()
-  return files.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 200)
-}
-
-export async function createStoredFile(record: FileRecord, contents: Uint8Array) {
-  return withMutationLock(async () => {
-    await ensureStorage()
-    const destination = filePathForKey(record.objectKey)
-    const temporaryPath = `${destination}.${crypto.randomUUID()}.tmp`
-
-    try {
-      await writeFile(temporaryPath, contents)
-      await rename(temporaryPath, destination)
-    } finally {
-      await unlink(temporaryPath).catch(() => {})
-    }
-
-    try {
-      const files = await readIndex()
-      await writeIndex([record, ...files.filter((file) => file.id !== record.id)])
-    } catch (error) {
-      await unlink(destination).catch(() => {})
-      throw error
-    }
-
-    return record
-  })
-}
-
-export async function getStoredFile(id: string) {
-  const files = await readIndex()
-  const record = files.find((file) => file.id === id)
-  if (!record) return null
-
-  try {
-    const contents = await readFile(filePathForKey(record.objectKey))
-    return { record, contents }
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
-    throw error
-  }
-}
-
-export async function deleteStoredFile(id: string) {
-  return withMutationLock(async () => {
-    const files = await readIndex()
-    const record = files.find((file) => file.id === id)
-    if (!record) return false
-
-    const destination = filePathForKey(record.objectKey)
-    const tombstone = `${destination}.${crypto.randomUUID()}.delete`
-    let moved = false
-    try {
-      await rename(destination, tombstone)
-      moved = true
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-    }
-
-    try {
-      await writeIndex(files.filter((file) => file.id !== id))
-    } catch (error) {
-      if (moved) await rename(tombstone, destination).catch(() => {})
-      throw error
-    }
-
-    if (moved) await unlink(tombstone).catch(() => {})
-    return true
-  })
-}
-
 export function storageError(error: unknown) {
-  if (process.env.NODE_ENV !== 'production') console.error('Dropwell storage error:', error)
-  return 'The local file library is unavailable. Please try again.'
+  if (process.env.NODE_ENV !== 'production') console.error('DropZone storage error:', error)
+  return 'Your cloud file library is unavailable. Please try again.'
 }

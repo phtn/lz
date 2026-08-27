@@ -8,7 +8,8 @@ module
   const LazyFileDetails = lazy(() => import('./FileDetails.btsx'));
   const LazyQueue = lazy(() => import('./Queue.btsx'));
 
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'octane'
+import { lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'octane'
+import { authenticatedFetch, getCurrentUser, getServerAuthUser, subscribeToAuthState } from '@/lib/firebase'
 import type { CategoryName, QueueItem, StoredFile } from '@/types/file'
 import { analyzeFile } from '@/utils/helpers'
 import DropZone from './DropZone.btsx'
@@ -50,6 +51,7 @@ setup
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const queueRef = useRef<QueueItem[]>([]);
   const processingRef = useRef(false);
+  const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
 
   const openQueueSheet = useCallback(() => setIsQueueOpen(true), []);
   const closeQueueSheet = useCallback(() => setIsQueueOpen(false), []);
@@ -63,6 +65,33 @@ setup
   const updateQueueItem = useCallback((id: string, changes: Partial<QueueItem>) => {
     syncQueue((items) => items.map((item) => item.id === id ? { ...item, ...changes } : item));
   }, [syncQueue]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void Promise.resolve().then(async () => {
+      if (!currentUser) {
+        setLibrary([]);
+        setSelectedFileId(null);
+        setStorageNotice('Sign in with Google to view and upload files.');
+        return;
+      }
+
+      setStorageNotice('');
+      try {
+        const response = await authenticatedFetch('/api/files', { signal: controller.signal });
+        const payload = await response.json() as { files?: StoredFile[]; error?: string };
+        if (!response.ok) throw new Error(payload.error ?? 'Your file library could not be loaded.');
+        setLibrary(payload.files ?? []);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setLibrary([]);
+        setStorageNotice(error instanceof Error ? error.message : 'Your file library could not be loaded.');
+      }
+    });
+
+    return () => controller.abort();
+  }, [currentUser]);
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
@@ -109,7 +138,7 @@ setup
           formData.append('confidence', String(classification.confidence));
           formData.append('excerpt', classification.excerpt);
 
-          const response = await fetch('/api/files', { method: 'POST', body: formData });
+          const response = await authenticatedFetch('/api/files', { method: 'POST', body: formData });
           if (!response.ok) {
             const payload = await response.json().catch(() => ({})) as { error?: string };
             throw new Error(payload.error ?? 'Upload could not be completed');
@@ -136,6 +165,11 @@ setup
   }, [syncQueue, updateQueueItem]);
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
+    if (!getCurrentUser()) {
+      setStorageNotice('Sign in with Google before uploading files.');
+      return;
+    }
+
     const files = Array.from(fileList).filter((file) => file.size > 0);
     if (files.length === 0) return;
 
@@ -181,7 +215,7 @@ setup
     if (wasSelected) setSelectedFileId(null);
 
     try {
-      const response = await fetch(`/api/files/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const response = await authenticatedFetch(`/api/files/${encodeURIComponent(id)}`, { method: 'DELETE' });
       if (response.ok) return;
     } catch {
       // The rollback below restores only this file, preserving concurrent changes.

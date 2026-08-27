@@ -139,7 +139,7 @@ fragment
               span(className="text-[9.75px] text-muted-foreground" role="cell") #{formatBytes(file.size)}
               span(className="text-[9.75px] text-muted-foreground" role="cell") #{formatFileDate(file.createdAt)}
               div(className={['flex items-center justify-end gap-0.5 opacity-0 transition-opacity duration-[130ms] group-hover:opacity-100 group-focus-within:opacity-100 max-[620px]:hidden [&_a]:grid [&_a]:size-7 [&_a]:cursor-pointer [&_a]:place-items-center [&_a]:rounded-[7px] [&_a]:border-0 [&_a]:bg-transparent [&_a]:p-0 [&_a]:text-muted-foreground [&_a]:no-underline [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand [&_button]:grid [&_button]:size-7 [&_button]:cursor-pointer [&_button]:place-items-center [&_button]:rounded-[7px] [&_button]:border-0 [&_button]:bg-transparent [&_button]:p-0 [&_button]:text-muted-foreground [&_button:hover]:bg-brand-soft [&_button:hover]:text-brand', selectedFileId === file.id && 'opacity-100']} role="cell")
-                a(href={`/api/files/${encodeURIComponent(file.id)}`} aria-label={`Open ${file.name}`})
+                a(href={file.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${file.name}`})
                   Icon(name="external-link" size={15})
                 button(type="button" onClick={() => void deleteFile(file.id)} aria-label={`Delete ${file.name}`})
                   Icon(name="trash-delete")

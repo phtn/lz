@@ -1,6 +1,6 @@
-import type { CategoryName, CategoryRule, QueueStatus, StoredFile } from '@/types/file'
+import type { CategoryName, CategoryRule, QueueStatus } from '@/types/file'
 
-export const CATEGORY_NAMES: StoredFile['category'][] = [
+export const CATEGORY_NAMES: Exclude<CategoryName, 'All'>[] = [
   'Receipts',
   'Finance',
   'Legal',

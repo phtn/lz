@@ -79,7 +79,7 @@ section
       ~ inert={isExpanded}
       ~ )
       div(className={['grid size-12 place-items-center rounded-[13px] bg-brand-soft text-brand shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--brand)_8%,transparent)] transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] dark:rounded-full dark:border-1.5 dark:border-[#111] dark:bg-[#242424] dark:shadow-[inset_0_1px_0_#454545,0_2px_4px_#111]', isExpanded && '-translate-y-[30px] opacity-0']})
-        Icon(name="server" size={28})
+        Icon(name="server" size={20})
       div(className={['min-w-0 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]', isExpanded && '-translate-y-[30px] opacity-0']})
         span(className="mb-[5px] block text-[9px] font-bold uppercase tracking-[0.09em] text-brand") Storage
         h2(className="m-0 text-[15px] tracking-[-0.02em]") #{isDragging ? 'Release to organize' : 'Drop files here to organize them'}
