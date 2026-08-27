@@ -73,7 +73,7 @@ setup
       if (!currentUser) {
         setLibrary([]);
         setSelectedFileId(null);
-        setStorageNotice('Sign in with Google to view and upload files.');
+        setStorageNotice('');
         return;
       }
 
@@ -165,10 +165,7 @@ setup
   }, [syncQueue, updateQueueItem]);
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
-    if (!getCurrentUser()) {
-      setStorageNotice('Sign in with Google before uploading files.');
-      return;
-    }
+    if (!getCurrentUser()) return;
 
     const files = Array.from(fileList).filter((file) => file.size > 0);
     if (files.length === 0) return;

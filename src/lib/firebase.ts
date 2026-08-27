@@ -37,6 +37,7 @@ if (missingConfig.length > 0) {
 export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 export const googleProvider = new GoogleAuthProvider()
+let authStateReady = false
 
 export function signInWithGoogle(): Promise<UserCredential> {
   return signInWithPopup(auth, googleProvider)
@@ -47,7 +48,10 @@ export function signOutCurrentUser(): Promise<void> {
 }
 
 export function subscribeToAuthState(onStoreChange: () => void): () => void {
-  return onAuthStateChanged(auth, onStoreChange)
+  return onAuthStateChanged(auth, () => {
+    authStateReady = true
+    onStoreChange()
+  })
 }
 
 export function getCurrentUser(): User | null {
@@ -56,6 +60,14 @@ export function getCurrentUser(): User | null {
 
 export function getServerAuthUser(): User | null {
   return null
+}
+
+export function getAuthStateReady(): boolean {
+  return authStateReady
+}
+
+export function getServerAuthStateReady(): boolean {
+  return false
 }
 
 export async function authenticatedFetch(

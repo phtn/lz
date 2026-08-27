@@ -9,7 +9,7 @@ module
 
 import { use, useState, useSyncExternalStore } from 'octane'
 import { ThemeContext } from '@/context/theme'
-import { getCurrentUser, getServerAuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
+import { getAuthStateReady, getCurrentUser, getServerAuthStateReady, getServerAuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
 import {Icon} from '@/lib/icons'
 import {Button} from "./ui";
 
@@ -17,8 +17,10 @@ props { search, setSearch, fileInputRef, searchInputRef }: MobileHeaderProps
 setup
   const { toggleTheme } = use(ThemeContext);
   const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
+  const isAuthStateReady = useSyncExternalStore(subscribeToAuthState, getAuthStateReady, getServerAuthStateReady);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState('');
+  const isAuthLoading = !isAuthStateReady || isAuthenticating;
 
   const handleAuthClick = async () => {
     setAuthError('');
@@ -74,19 +76,29 @@ header(
     //   | Private OCR
     Button(variant='' className="rounded-full aspect-square" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
       Icon(name="theme" className="text-muted-foreground")
-    Button(
-      ~ size="sm"
-      ~ variant="dark"
-      ~ type="button"
-      ~ icon="person"
-      ~ label={currentUser ? 'Sign out' : 'Sign in with Google'}
-      ~ pending={isAuthenticating}
-      ~ pendingLabel={currentUser ? 'Signing out…' : 'Signing in…'}
-      ~ onClick={() => void handleAuthClick()}
-      ~ className="max-[620px]:size-[38px] max-[620px]:px-0 max-[620px]:[&_span_span]:hidden"
-      ~ aria-label={currentUser ? `Sign out ${currentUser.displayName ?? currentUser.email ?? 'current user'}` : 'Sign in with Google'}
-      ~ title={currentUser ? `Signed in as ${currentUser.displayName ?? currentUser.email ?? 'Google user'}` : 'Sign in with Google'}
-      ~ )
+    if isAuthLoading
+      Button(
+        ~ size="sm"
+        ~ variant="dark"
+        ~ type="button"
+        ~ icon="spinner-shuffle"
+        ~ disabled
+        ~ className="min-w-[168px] max-[620px]:size-[38px] max-[620px]:min-w-0 max-[620px]:px-0"
+        ~ aria-label="Loading authentication"
+        ~ title="Loading authentication"
+        ~ )
+    else
+      Button(
+        ~ size="sm"
+        ~ variant="dark"
+        ~ type="button"
+        ~ icon="person"
+        ~ label={currentUser ? 'Sign out' : 'Sign in with Google'}
+        ~ onClick={() => void handleAuthClick()}
+        ~ className="min-w-[168px] max-[620px]:size-[38px] max-[620px]:min-w-0 max-[620px]:px-0 max-[620px]:[&_span_span]:hidden"
+        ~ aria-label={currentUser ? `Sign out ${currentUser.displayName ?? currentUser.email ?? 'current user'}` : 'Sign in with Google'}
+        ~ title={currentUser ? `Signed in as ${currentUser.displayName ?? currentUser.email ?? 'Google user'}` : 'Sign in with Google'}
+        ~ )
     if authError
       p(className="absolute right-4 top-[calc(100%+8px)] z-50 m-0 max-w-sm rounded-lg border border-destructive/20 bg-surface px-3 py-2 text-[10px] text-destructive shadow-lg" role="alert") #{authError}
     // button(className="relative grid size-[38px] cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground max-[820px]:hidden" type="button" aria-label="Notifications")
