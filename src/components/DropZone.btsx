@@ -6,7 +6,6 @@ module
     isExpanded: boolean;
     onExpandedChange: (value: boolean) => void;
     addFiles: (files: FileList) => void;
-    storageNotice: string | null;
     fileInputRef: { current: HTMLInputElement | null };
   }
 
@@ -15,7 +14,7 @@ import {Icon} from '@/lib/icons'
 import { Button } from './ui'
 import { cn } from '@/lib/utils'
 
-props { isDragging, setIsDragging, isExpanded, onExpandedChange, addFiles, storageNotice, fileInputRef }: DropZoneProps
+props { isDragging, setIsDragging, isExpanded, onExpandedChange, addFiles, fileInputRef }: DropZoneProps
 setup
   const openButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -85,14 +84,14 @@ section
       ~ aria-hidden={isExpanded}
       ~ inert={isExpanded}
       ~ )
-      div(className={['grid size-12 place-items-center rounded-[13px] bg-brand-soft text-brand shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--brand)_8%,transparent)] transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] dark:rounded-full dark:border-1.5 dark:border-[#111] dark:bg-[#242424] dark:shadow-[inset_0_1px_0_#454545,0_2px_4px_#111]', isExpanded && '-translate-y-[30px] opacity-0']})
+      div(className={['hidden md:grid size-12 place-items-center rounded-[13px] bg-brand-soft text-brand shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--brand)_8%,transparent)] transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] dark:rounded-full dark:border-1.5 dark:border-[#111] dark:bg-[#242424] dark:shadow-[inset_0_1px_0_#454545,0_2px_4px_#111]', isExpanded && '-translate-y-[30px] opacity-0']})
         Icon(name="chute" size={20} className="rotate-8")
-      div(className={['min-w-0 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]', isExpanded && '-translate-y-[30px] opacity-0']})
+      div(className={['hidden md:block min-w-0 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]', isExpanded && '-translate-y-[30px] opacity-0']})
         span(className="mb-[5px] block text-[9px] font-bold uppercase tracking-[0.09em] text-brand") Auto Mode
         h2(className="m-0 text-[15px] tracking-[-0.02em]") #{isDragging ? 'Release to organize' : 'Drop files here'}
 
-      div(className={['flex flex-wrap items-center justify-end gap-3.5 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] max-[1320px]:col-span-full max-[1320px]:pl-[65px] max-[820px]:col-span-full max-[820px]:justify-between max-[820px]:pl-[65px] max-[620px]:items-stretch max-[620px]:flex-col max-[620px]:pl-0 max-[620px]:[&_button]:w-full', isExpanded && 'translate-y-[30px] opacity-0']})
-        div.flex.items-center.space-x-4
+      div(className={['flex items-center justify-end gap-3.5 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] max-[1320px]:col-span-full max-[1320px]:pl-[65px] max-[820px]:col-span-full max-[820px]:justify-between max-[820px]:pl-[65px] max-[620px]:items-stretch  max-[620px]:pl-0 max-[620px]:[&_button]:w-full', isExpanded && 'translate-y-[30px] opacity-0']})
+        div.w-full.flex.items-center.space-x-4
           Button(
             ~ ref={openButtonRef}
             ~ className="dark:!rounded-sm dark:!bg-[#353535] dark:!bg-none dark:!text-[#e0e0e0] dark:!shadow-[inset_0_1px_0_#4a4a4a,0_0_0_1px_#111]"
@@ -100,17 +99,20 @@ section
             ~ aria-controls="expanded-drop-zone"
             ~ aria-expanded={isExpanded}
             ~ onClick={openDropZone}
+            ~ size="lg"
             ~ )
             // div(className="flex items-center justify-center size-9 aspect-square")
             span Auto Sort
             Icon(name="mechanics" className="size-4")
         div.flex.items-center.space-x-4
-          Button( variant="secondary" className="dark:!rounded-sm dark:!bg-[#353535] dark:!text-[#d2d2d2] dark:!shadow-[inset_0_1px_0_#4a4a4a,0_0_0_1px_#111]" onClick={() => fileInputRef.current?.click()})
+          Button( variant="secondary" className="hidden md:flex dark:!rounded-sm dark:!bg-[#353535] dark:!text-[#d2d2d2] dark:!shadow-[inset_0_1px_0_#4a4a4a,0_0_0_1px_#111]" onClick={() => fileInputRef.current?.click()})
             span  Special Drop
             Icon(name="wand" className="size-3.5")
-        Button(variant="default" className="dark:!rounded-sm dark:!bg-brand dark:!text-[#181818] dark:!shadow-[inset_0_1px_0_#efefef,0_0_0_1px_#111]" type="button" onClick={() => fileInputRef.current?.click()})
-          span Browse files
-          Icon(name="new-folder")
+
+        div.flex.items-center.space-x-4
+          Button(variant="default" className="dark:!rounded-sm dark:!bg-brand dark:!text-[#181818] dark:!shadow-[inset_0_1px_0_#efefef,0_0_0_1px_#111]" type="button" onClick={() => fileInputRef.current?.click()})
+            span Browse files
+            Icon(name="new-folder")
 
     div#expanded-drop-zone(
       ~ className={[
@@ -119,7 +121,6 @@ section
       ~     ? 'visible pointer-events-auto translate-y-0 scale-100 opacity-100 [transition-duration:260ms,540ms,0s] [transition-delay:180ms,100ms,0s]'
       ~     : 'invisible pointer-events-none translate-y-[22px] scale-[0.985] opacity-0 [transition-duration:180ms,420ms,0s] [transition-delay:0s,0s,420ms]'
       ~ ]}
-      ~ aria-hidden={!isExpanded}
       ~ inert={!isExpanded}
       ~ )
       button(
@@ -139,16 +140,3 @@ section
         div(className="mt-7 flex flex-col items-center gap-3.5")
           button(type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex h-11 min-w-[150px] cursor-pointer items-center justify-center gap-2 rounded-xl border-0 bg-brand px-5 text-xs font-[650] text-brand-foreground shadow-[0_12px_26px_color-mix(in_oklab,var(--brand)_24%,transparent)] transition-all duration-150 hover:-translate-y-px hover:bg-brand-strong hover:shadow-[0_15px_30px_color-mix(in_oklab,var(--brand)_30%,transparent)] dark:rounded-sm dark:border dark:border-[#111] dark:shadow-[inset_0_1px_0_#efefef,0_4px_10px_#171717] dark:text-background text-base! tracking-normal")
             | or browse files
-
-  if storageNotice
-    div(
-      ~ className={[
-      ~   'flex items-start gap-[9px] rounded-[10px] bg-warning/10 px-[13px] text-[10.5px] leading-[1.45] text-warning-foreground transition-[max-height,margin,padding,border-width,opacity,transform] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
-      ~   isExpanded
-      ~     ? 'mt-0 max-h-0 translate-y-[18px] overflow-hidden border-0 py-0 opacity-0'
-      ~     : 'mt-2.5 max-h-[120px] translate-y-0 border border-warning/30 py-[11px] opacity-100'
-      ~ ]}
-      ~ role="status"
-      ~ )
-      Icon(name="shield-check")
-      | #{storageNotice}

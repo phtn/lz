@@ -73,8 +73,8 @@ module
   }
 
   const BUTTON_SIZE_CLASSES = {
-    sm: "h-[32px] rounded-full px-4",
-    mm: "h-[36px] rounded-lg px-5",
+    sm: "h-[36px] rounded-full px-4",
+    mm: "h-[38px] rounded-lg px-5",
     lg: "h-[40px] rounded-xl px-6",
   } as const satisfies Record<ButtonSize, string>
 

@@ -2,7 +2,6 @@ module
   "use strong";
   interface FileDashboardProps {
     initialLibrary?: StoredFile[];
-    initialStorageNotice?: string;
   }
 
   const LazyFileDetails = lazy(() => import('./FileDetails.btsx'));
@@ -36,7 +35,7 @@ component FileDetailsLoadError
       h2(className="mb-0 mt-3.5 text-xs text-foreground") Details unavailable
       p(className="mb-0 mt-[7px] max-w-[205px] text-[9.5px] leading-[1.55] text-muted-foreground") Select the file again to retry loading its details.
 
-props { initialLibrary = [], initialStorageNotice = '' }: FileDashboardProps
+props { initialLibrary = [] }: FileDashboardProps
 setup
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [library, setLibrary, getLibrary] = useState<StoredFile[]>(initialLibrary);
@@ -44,7 +43,6 @@ setup
   const [isDropZoneExpanded, setIsDropZoneExpanded] = useState(false);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<CategoryName>('All');
-  const [storageNotice, setStorageNotice] = useState(initialStorageNotice);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [selectedFileId, setSelectedFileId, getSelectedFileId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -73,20 +71,17 @@ setup
       if (!currentUser) {
         setLibrary([]);
         setSelectedFileId(null);
-        setStorageNotice('');
         return;
       }
 
-      setStorageNotice('');
       try {
         const response = await authenticatedFetch('/api/files', { signal: controller.signal });
         const payload = await response.json() as { files?: StoredFile[]; error?: string };
         if (!response.ok) throw new Error(payload.error ?? 'Your file library could not be loaded.');
         setLibrary(payload.files ?? []);
-      } catch (error) {
+      } catch {
         if (controller.signal.aborted) return;
         setLibrary([]);
-        setStorageNotice(error instanceof Error ? error.message : 'Your file library could not be loaded.');
       }
     });
 
@@ -146,7 +141,6 @@ setup
 
           const payload = await response.json() as { file: StoredFile };
           setLibrary((current) => [payload.file, ...current.filter((file) => file.id !== payload.file.id)]);
-          setStorageNotice('');
           if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
           syncQueue((items) => items.filter((candidate) => candidate.id !== item.id));
         } catch (error) {
@@ -225,7 +219,6 @@ setup
       return next;
     });
     if (wasSelected && getSelectedFileId() === null) setSelectedFileId(id);
-    setStorageNotice('That file could not be removed. Please try again.');
   }, [getLibrary, getSelectedFileId]);
 
   const filteredLibrary = useMemo(() => {
@@ -302,7 +295,6 @@ div(className="min-h-screen dark:bg-[#181818]")
           ~ isExpanded={isDropZoneExpanded}
           ~ onExpandedChange={setIsDropZoneExpanded}
           ~ addFiles={addFiles}
-          ~ storageNotice={storageNotice}
           ~ fileInputRef={fileInputRef}
           ~ )
 

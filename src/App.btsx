@@ -12,7 +12,6 @@ module
     export async function loadInitialState() {
       return {
         library: [] as StoredFile[],
-        storageNotice: '',
         socialImage: '/dropzone-og.png'
       };
     }
@@ -24,7 +23,7 @@ component Dashboard
     meta(property="og:image" content={initialState.socialImage})
     meta(name="twitter:image" content={initialState.socialImage})
     ThemeProvider
-      FileDashboard(initialLibrary={initialState.library} initialStorageNotice={initialState.storageNotice})
+      FileDashboard(initialLibrary={initialState.library})
 
 fragment
   meta(
