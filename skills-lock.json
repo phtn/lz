@@ -5,7 +5,7 @@
       "source": "phtn/beast-skill",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "48e88229568526d77d7c4a363019e63688f1d5e1930046c3bbb87ece05c44bf7"
+      "computedHash": "ad3b1a7c47e2a4429d0fce2518bf3018e8fde62e8ea2d2765c28cbb496b6db75"
     },
     "convex": {
       "source": "get-convex/agent-skills",
@@ -204,6 +204,12 @@
       "sourceType": "github",
       "skillPath": "skills/convex-verify/SKILL.md",
       "computedHash": "dbe65a37ca2e9a5afa55669b8928ce1dc3ac765151452008f9105bde049228f7"
+    },
+    "react-to-beast": {
+      "source": "phtn/react-to-beast",
+      "sourceType": "github",
+      "skillPath": "skills/react-to-beast/SKILL.md",
+      "computedHash": "082c29e0f4eda73359bcbda33d91f67c1c7a742b91cf7b1c7769486f91c1a632"
     }
   }
 }

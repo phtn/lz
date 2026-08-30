@@ -37,11 +37,11 @@ setup
   };
 
 header(
-  ~ className="relative z-50 grid h-[72px] dark:rounded-[5px] grid-cols-[218px_minmax(330px,1fr)_minmax(220px,350px)_auto] items-center gap-[18px] border-b dark:border-x-[1.5px] dark:border-t-[2.5px] dark:border-[#050505] border-sidebar-border bg-background/95 px-5 backdrop-blur-[18px] dark:h-[52px] dark:grid-cols-[280px_minmax(0,1fr)_auto] dark:gap-0 dark:border-[#0a0a0a] dark:bg-[#2d2d2d] dark:px-4 dark:shadow-[inset_0_-1px_0_#3a3a3a] dark:backdrop-blur-none max-[1320px]:grid-cols-[198px_minmax(280px,1fr)_minmax(200px,310px)_auto] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_auto] max-[1100px]:grid-cols-[190px_minmax(250px,1fr)_minmax(210px,320px)_auto] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)_auto] max-[820px]:h-16 max-[820px]:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:gap-3 max-[820px]:px-3.5 max-[820px]:dark:h-16 max-[820px]:dark:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:dark:gap-3 max-[820px]:dark:px-3.5"
+  ~ className="relative z-50 grid h-[72px] dark:rounded-[5px] grid-cols-[218px_minmax(330px,1fr)_minmax(220px,350px)_auto] items-center gap-[18px] border-b dark:border-x-[2px] dark:border-b-[0.5px] dark:border-t-[1.5px] dark:border-[#050505] border-sidebar-border bg-background/95 px-5 backdrop-blur-[18px] dark:h-[52px] dark:grid-cols-[280px_minmax(0,1fr)_auto] dark:gap-0 dark:border-[#0a0a0a] dark:bg-[#2d2d2d] dark:px-4 dark:shadow-[inset_0_1px_0_#3a3a3a] dark:backdrop-blur-none max-[1320px]:grid-cols-[198px_minmax(280px,1fr)_minmax(200px,310px)_auto] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_auto] max-[1100px]:grid-cols-[190px_minmax(250px,1fr)_minmax(210px,320px)_auto] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)_auto] max-[820px]:h-16 max-[820px]:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:gap-3 max-[820px]:px-3.5 max-[820px]:dark:h-16 max-[820px]:dark:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:dark:gap-3 max-[820px]:dark:px-3.5"
   ~ )
   div(className="absolute left-4 hidden items-center gap-2 dark:flex max-[820px]:dark:hidden" aria-hidden="true")
     span(className="size-3 rounded-full bg-[#ff5f57]")
-  strong(className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 text-[13px] font-[650] tracking-[-0.01em] text-[#d4d4d4] dark:block max-[820px]:dark:hidden") DropZone Dashboard
+  strong(className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 font-poly font-semibold text-foreground tracking-[-0.01em] dark:block max-[820px]:dark:hidden") DropZone
 
   div(className="inline-flex items-center gap-2.5 text-[19px] font-[760] tracking-[-0.045em] text-foreground dark:invisible max-[820px]:dark:visible max-[820px]:[&_span:last-child]:hidden" aria-label="DropZone home")
     Icon(name="chute" size={24})

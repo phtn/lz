@@ -73,8 +73,8 @@ export const icons = {
   },
   clock: {
     symbol:
-      '<path fill="currentColor" d="M10 1.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 1 1 0-17m0 1.843A6.66 6.66 0 0 0 3.343 10 6.66 6.66 0 0 0 10 16.657 6.66 6.66 0 0 0 16.657 10 6.66 6.66 0 0 0 10 3.343m0 2.253a.92.92 0 0 1 .922.922l-.001 3.099 1.984 1.984a.92.92 0 0 1 .089 1.2l-.089.103a.92.92 0 0 1-1.303 0l-2.253-2.253a.92.92 0 0 1-.27-.652V6.518A.92.92 0 0 1 10 5.596" transform-origin="0 0"/>',
-    viewBox: '0 0 20 20',
+      '<path fill="currentColor" d="M8 1.2a6.8 6.8 0 1 1 0 13.6A6.8 6.8 0 1 1 8 1.2m0 1.474A5.33 5.33 0 0 0 2.674 8 5.33 5.33 0 0 0 8 13.326 5.33 5.33 0 0 0 13.326 8 5.33 5.33 0 0 0 8 2.674m0 1.803a.736.736 0 0 1 .738.737l-.001 2.48 1.587 1.587a.736.736 0 0 1 .071.96l-.071.082a.736.736 0 0 1-1.042 0L7.479 8.521a.74.74 0 0 1-.216-.522V5.214A.736.736 0 0 1 8 4.477" transform-origin="0 0"/>',
+    viewBox: '0 0 16 16',
     set: 'svg'
   },
   mechanics: {
@@ -181,7 +181,7 @@ export const icons = {
   },
   'chevron-down': {
     symbol:
-      '<path fill="none" stroke="oklch(14.5% 0 0)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9s-4.419 6-6 6-6-6-6-6" transform-origin="0 0"/>',
+      '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9s-4.419 6-6 6-6-6-6-6" transform-origin="0 0"/>',
     viewBox: '0 0 24 24',
     set: 'svg'
   },
@@ -262,6 +262,42 @@ export const icons = {
       '<rect width="10" height="10" x="1" y="1" fill="currentColor" rx="1"><animate id="SVG7WybndBt" fill="freeze" attributeName="x" begin="0;SVGo3aOUHlJ.end" dur="0.2s" values="1;13"/><animate id="SVGVoKldbWM" fill="freeze" attributeName="y" begin="SVGFpk9ncYc.end" dur="0.2s" values="1;13"/><animate id="SVGKsXgPbui" fill="freeze" attributeName="x" begin="SVGaI8owdNK.end" dur="0.2s" values="13;1"/><animate id="SVG7JzAfdGT" fill="freeze" attributeName="y" begin="SVG28A4To9L.end" dur="0.2s" values="13;1"/></rect><rect width="10" height="10" x="1" y="13" fill="currentColor" rx="1"><animate id="SVGUiS2jeZq" fill="freeze" attributeName="y" begin="SVG7WybndBt.end" dur="0.2s" values="13;1"/><animate id="SVGU0vu2GEM" fill="freeze" attributeName="x" begin="SVGVoKldbWM.end" dur="0.2s" values="1;13"/><animate id="SVGOIboFeLf" fill="freeze" attributeName="y" begin="SVGKsXgPbui.end" dur="0.2s" values="1;13"/><animate id="SVG14lAaeuv" fill="freeze" attributeName="x" begin="SVG7JzAfdGT.end" dur="0.2s" values="13;1"/></rect><rect width="10" height="10" x="13" y="13" fill="currentColor" rx="1"><animate id="SVGFpk9ncYc" fill="freeze" attributeName="x" begin="SVGUiS2jeZq.end" dur="0.2s" values="13;1"/><animate id="SVGaI8owdNK" fill="freeze" attributeName="y" begin="SVGU0vu2GEM.end" dur="0.2s" values="13;1"/><animate id="SVG28A4To9L" fill="freeze" attributeName="x" begin="SVGOIboFeLf.end" dur="0.2s" values="1;13"/><animate id="SVGo3aOUHlJ" fill="freeze" attributeName="y" begin="SVG14lAaeuv.end" dur="0.2s" values="1;13"/></rect>',
     viewBox: '0 0 24 24',
     set: 'svg-spinners'
+  },
+  like: {
+    symbol:
+      '<path d="M8.11 2.646c2.272-1.74 5.285-.887 6.325 1.712 1.228 3.068-.839 6.848-6.144 9.83a.6.6 0 0 1-.588 0C2.398 11.207.332 7.425 1.56 4.357 2.6 1.759 5.613.908 7.885 2.646l.112.09zm5.21 2.157c-.807-2.019-3.205-2.555-4.895-.837a.6.6 0 0 1-.855 0c-1.69-1.718-4.088-1.182-4.896.837-.932 2.328.654 5.381 5.083 8.028l.24.141.24-.14c4.343-2.597 5.952-5.582 5.136-7.891z" transform-origin="0 0" fill="currentColor"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  edit: {
+    symbol:
+      '<path d="M9.488 3.298a1.7 1.7 0 0 1 2.403 0l.811.81a1.7 1.7 0 0 1 0 2.404l-1.376 1.377-4.814 4.813a1.7 1.7 0 0 1-1.202.498H3.528a.73.73 0 0 1-.728-.728V10.69c0-.45.18-.884.498-1.202L8.11 4.674zM8.626 6.22l-4.298 4.298a.24.24 0 0 0-.071.172v1.053H5.31a.24.24 0 0 0 .122-.033l.05-.038 4.299-4.298-1.155-1.155zm2.236-1.892a.243.243 0 0 0-.344 0l-.862.862 1.154 1.154.862-.862a.24.24 0 0 0 .04-.29l-.04-.053z" transform-origin="0 0" fill="currentColor"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  down: {
+    symbol:
+      '<path d="M9.097 9.904a1.46 1.46 0 0 1-2.194 0L4.215 6.97a.856.856 0 0 1 0-1.135.69.69 0 0 1 1.04 0L7.941 8.77a.076.076 0 0 0 .116 0l2.688-2.935a.69.69 0 0 1 1.039 0 .856.856 0 0 1 0 1.135z" transform-origin="0 0" fill="currentColor"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  favorite: {
+    symbol:
+      '<path fill="currentColor" fill-rule="evenodd" d="M4 2h7.998a2 2 0 0 1 2 1.999v6.689a2 2 0 0 1-2 2h-1.75L8.422 14.2a.67.67 0 0 1-.853-.002l-1.802-1.51H3.999a2 2 0 0 1-2-2V3.999a2 2 0 0 1 2-2m3.999 2.666c.21 0 .381.171.381.382 0 .746.166 1.197.436 1.467s.72.436 1.468.436a.381.381 0 1 1 0 .763c-.747 0-1.197.165-1.468.436s-.436.72-.436 1.467a.381.381 0 0 1-.762 0c0-.746-.166-1.197-.436-1.467s-.721-.436-1.468-.436a.381.381 0 1 1 0-.763c.747 0 1.197-.165 1.468-.436s.436-.72.436-1.467c0-.21.17-.381.381-.381" clip-rule="evenodd"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  upload: {
+    symbol:
+      '<g transform="scale(0.667)"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 17a5 5 0 0 0 .817-9.934.01.01 0 0 1-.008-.007A5.5 5.5 0 0 0 6.033 9.11a.01.01 0 0 1-.007.01A4.002 4.002 0 0 0 7 17h1m4-6.995V21m3-8-3-2.995L9 13"/></g>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  sorted: {
+    symbol:
+      '<path d="M10.377 6.314a.6.6 0 0 1 1.073 0l.91 1.821 1.822.91a.6.6 0 0 1 .077 1.028l-.077.046-1.822.911-.91 1.821a.6.6 0 0 1-1.027.078l-.046-.078-.911-1.821-1.821-.91a.6.6 0 0 1-.078-1.028l.078-.046 1.82-.91zM4.414 11.15a.6.6 0 1 1 0 1.2H2.08a.6.6 0 1 1 0-1.2zm6.499-3.226-.463.927a.6.6 0 0 1-.268.268l-.926.463.926.464a.6.6 0 0 1 .23.201l.04.067.462.926.464-.926a.6.6 0 0 1 .201-.23l.067-.038.927-.464-.927-.463a.6.6 0 0 1-.23-.201l-.038-.068zm-5.167-.942a.6.6 0 1 1 0 1.2H2.08a.6.6 0 1 1 0-1.2zm7.334-4.166a.6.6 0 0 1 0 1.2h-11a.6.6 0 0 1 0-1.2z" transform-origin="0 0" fill="currentColor"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
   }
 }
 

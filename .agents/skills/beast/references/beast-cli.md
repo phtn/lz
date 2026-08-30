@@ -21,7 +21,7 @@ bun x create-beast@latest [directory]
 | `--force` | Write known template files into a non-empty directory without deleting unrelated files |
 | `-h`, `--help` | Print help |
 
-Inspect a non-empty target before using `--force`. The base and Tailwind templates include typed `src/App.btsx`, `src/main.ts`, styles, `vite.config.ts` with `beastOctane()`, and a TSRX-aware `tsconfig.json`. The Tailwind template also configures `@tailwindcss/vite` and `@import "tailwindcss"`.
+Inspect a non-empty target before using `--force`. The base and Tailwind templates include typed `src/App.btsx`, `src/main.ts`, styles, `vite.config.ts` with `beastOctane()`, a TSRX-aware `tsconfig.json`, and a project-owned `CHANGELOG.md`. The Tailwind template also configures `@tailwindcss/vite` and `@import "tailwindcss"`. `create-beast@0.2.12` pins the tested `octane@0.1.49` toolchain and demonstrates scoped child setup.
 
 ## Compile and build
 

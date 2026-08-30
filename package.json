@@ -1,36 +1,39 @@
 {
   "name": "drop-zone-beast",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rsbuild build",
-    "preview": "octane-rsbuild-preview",
-    "start": "octane-rsbuild-preview",
+    "dev:cloudflare": "bun run build && wrangler dev",
+    "preview": "wrangler dev",
+    "start": "wrangler dev",
+    "deploy": "bun run build && wrangler deploy",
     "typecheck": "tsrx-tsc --noEmit",
     "check": "bun run typecheck && bun run build"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1119.0",
-    "@aws-sdk/s3-request-presigner": "^3.1119.0",
-    "@octanejs/lucide": "0.1.41",
-    "@octanejs/rsbuild-plugin": "0.1.41",
-    "beast-tsrx": "latest",
+    "@octanejs/adapter-cloudflare": "0.0.39",
+    "@octanejs/lucide": "0.1.44",
+    "@octanejs/rsbuild-plugin": "0.1.44",
+    "beast-tsrx": "0.2.9",
     "clsx": "^2.1.1",
     "convex": "^1.45.0",
     "firebase": "^12.18.0",
-    "octane": "0.1.46",
-    "pdfjs-dist": "^6.2.108",
+    "octane": "0.1.49",
+    "pdfjs-dist": "^6.3.289",
     "tailwind-merge": "^3.6.0",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
-    "@rsbuild/core": "^2.2.0",
+    "@cloudflare/workers-types": "^5.20260830.1",
+    "@rsbuild/core": "^2.2.1",
     "@tailwindcss/postcss": "^4.3.3",
-    "@tsrx/typescript-plugin": "0.3.118",
-    "@types/node": "^26.2.0",
+    "@tsrx/typescript-plugin": "0.3.128",
+    "@types/node": "^26.4.0",
     "tailwindcss": "^4.1.8",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2",
+    "wrangler": "^4.127.1"
   }
 }

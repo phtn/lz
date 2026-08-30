@@ -21,6 +21,26 @@ style
 
 An authored `fragment` emits a native TSRX fragment. Beast also inserts one for multiple roots, no roots, a text-only root, or a style-only root. A `style` body is raw CSS with common indentation removed; Octane scopes it while `:global(...)` escapes scoping. Explicit fragments and style blocks must not be empty.
 
+## Scoped child setup
+
+Use `scope` when setup belongs to one exact child position instead of the whole
+component. Leading `setup` declarations emit inside a nested Octane `@{ ... }`
+scope, may capture parent values, and may use hooks. A scope may render one or
+more children, or be setup-only.
+
+```btsx
+section
+  scope
+    setup const [count, setCount] = useState(0)
+    button(onClick={() => setCount(count + 1)}) Count: #{count}
+  scope
+    setup observe()
+```
+
+Keep every `setup` declaration before the scope's rendered children. Do not add
+a wrapper element solely to represent the scope; Beast emits native Octane
+child ownership.
+
 ## Continuation lines
 
 Prefix a more deeply indented physical line with `~` to append its payload to the preceding authored line. Beast trims the payload and joins it with one space.

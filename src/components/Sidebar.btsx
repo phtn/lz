@@ -16,6 +16,8 @@ import type { CategoryName, StoredFile } from '@/types/file'
 import { formatBytes } from '@/utils/helpers'
 import {Icon} from '@/lib/icons'
 import {Button} from "./ui";
+import {cn} from "@/lib/utils";
+
 
 props { activeQueueCount, library, activeCategory, setActiveCategory, categoryCounts, search, setSearch, searchInputRef }: SidebarProps
 setup
@@ -25,25 +27,25 @@ setup
 
 
 aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface pb-3 shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:rounded-bl-md dark:border-[0.33px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
-  div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto dark:rounded-[4px] dark:bg-[#272727] dark:p-0 dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
-    label(className="mb-3 px-1.5 hidden h-11 items-center gap-2 border-b-[0.33px] border-[#121212] bg-[#20202080] text-[#9a9a9a] shadow-[inset_0_1px_2px_#222] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4")
+  div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto dark:rounded-[4px] dark:bg-[#272727] dark:p-0 dark:shadow-[inset_0.75px_1px_0.75px_#393939,inset_-1px_0_0_#393939]")
+    label(className="mb-1 px-1.5 hidden h-11 items-center gap-2 border-b-[0.5px] border-[#202020] bg-[#202020] text-[#9a9a9a] shadow-[inset_0_1px_2px_#222] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4 dark:shadow-[inset_0.75px_1px_0.75px_#393939,inset_-1px_0_0_#393939]")
       // Icon(name="search" size={12} className="size-3.5!")
       input(
-        ~ className="min-w-0 flex-1 border-0 text-sm text-muted-foreground outline-none placeholder:text-[#777]"
+        ~ className="min-w-0 flex-1 border-0 text-sm text-muted-foreground outline-none placeholder:text-[#777] pl-2"
         ~ ref={searchInputRef}
         ~ type="search"
         ~ value={search}
         ~ onInput={(event) => setSearch(event.currentTarget.value)}
-        ~ placeholder="Search..."
+        ~ placeholder="Search"
         ~ aria-label="Search your files"
         ~ )
-    nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent/50 [&>button:hover]:text-foreground px-2" aria-label="File navigation")
+    nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-3 [&>button]:rounded-xs [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-sm [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent/50 [&>button:hover]:text-foreground px-0" aria-label="File navigation")
       button(
-        ~ className={activeCategory === 'All' ? 'text-brand! dark:!bg-[#3d3d3d] dark:!text-[#d2d2d2]' : 'hover:bg-accent/50'}
+        ~ className={activeCategory === 'All' ? 'text-brand! dark:bg-[#393939] dark:text-[#d3d3d3]' : 'hover:bg-accent/50'}
         ~ type="button"
         ~ onClick={() => setActiveCategory('All')}
         ~ )
-        Icon(name="file-blank")
+        Icon(name="folder" className={cn('size-4.5', {'dark:text-indigo-300': activeCategory === 'All'} )})
         | All files
         span(className={['inline-grid h-5 min-w-[22px] place-items-center rounded-full bg-muted px-1.5 text-[9.5px] font-bold text-muted-foreground', activeCategory === 'All' && 'bg-surface text-brand']}) #{library.length}
       button
@@ -61,7 +63,7 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
     div(className="mt-6 dark:mt-4 px-1.5")
       div(className="flex items-center justify-between px-2 pb-[9px] text-[9.5px] font-[680] uppercase tracking-[0.09em] text-muted-foreground dark:text-[#aaa]")
         span Smart folders
-        Icon(name="sparkles")
+        Icon(name="sorted")
       div(className="grid gap-1")
         each category in visibleCategories key category
           button(
@@ -78,16 +80,16 @@ aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border
         empty
           p(className="mx-2.5 my-1.5 text-[10.5px] leading-[1.45] text-muted-foreground") Folders appear as files are sorted.
 
-  div(className="mt-auto grid dark:mt-0 dark:shrink-0 dark:rounded-[4px] dark:bg-[#272727] dark:shadow-[inset_0_1px_0_#393939,inset_-1px_0_0_#393939]")
-    nav(className="grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent [&>button:hover]:text-foreground" aria-label="Account navigation")
+  div(className="mt-auto grid dark:mt-0 dark:shrink-0 dark:rounded-[4px] dark:bg-[#3b3b3b] dark:shadow-[inset_0_1px_0_#494949,inset_-1px_0_0_#494949]")
+    nav(className="p-1.5 grid gap-1 [&>button]:grid [&>button]:h-10 [&>button]:w-full [&>button]:cursor-pointer [&>button]:grid-cols-[20px_minmax(0,1fr)_auto] [&>button]:items-center [&>button]:gap-2.5 [&>button]:rounded-[9px] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-[11px] [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-muted-foreground [&>button]:transition-all [&>button]:duration-150 [&>button:hover]:bg-accent [&>button:hover]:text-foreground" aria-label="Account navigation")
       button(type="button" className="rounded-t-[4px]! dark:bg-accent rounded-b-[2px]! h-12!")
         Icon(name="settings")
         | Settings
 
-    div(className="rounded-[11px] dark:rounded-bl-[4px] dark:rounded-se-none border-y border-border bg-card p-4 dark:rounded-e-none dark:rounded-ss-none dark:rounded-rb-none dark:rounded-rt-[4px] dark:bg-[#222]")
-      div(className="flex items-center justify-between text-[10px] text-muted-foreground")
-        span(className="inline-flex items-center gap-[7px] font-[630] text-foreground")
-          Icon(name="cloud" className="opacity-50")
-          | Cloud
-        span(className=" text-muted-foreground") #{formatBytes(storageUsed)}
+    div(className="rounded-[11px] dark:rounded-bl-[4px] dark:rounded-se-none dark:border-y border-border bg-card p-4 dark:rounded-e-none dark:rounded-ss-none dark:rounded-rb-none dark:rounded-rt-[4px] dark:bg-[#222]")
+      div(className="flex items-center justify-between text-xs text-foreground/70")
+        span(className="inline-flex items-center gap-[7px]")
+          Icon(name="cloud" className="")
+          | Storage
+        span #{formatBytes(storageUsed)}
         span #{library.length} #{library.length <= 1 ? ' file' : ' files'}

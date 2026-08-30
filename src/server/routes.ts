@@ -7,8 +7,11 @@ import {
   createObjectKey,
   createStoredFileUrl,
   deleteStoredFile,
+  requirePlatform,
+  serveStoredFile,
   storageError,
   uploadStoredFile,
+  type AppPlatform,
   type FileRecord
 } from './storage'
 
@@ -35,7 +38,7 @@ function cleanFilename(value: string) {
   return value.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 255) || 'untitled'
 }
 
-async function toStoredFile(record: FileRecord): Promise<StoredFile> {
+async function toStoredFile(platform: AppPlatform, record: FileRecord): Promise<StoredFile> {
   return {
     id: record.id,
     name: record.name,
@@ -47,7 +50,7 @@ async function toStoredFile(record: FileRecord): Promise<StoredFile> {
     confidence: record.confidence,
     excerpt: record.excerpt,
     createdAt: new Date(record.createdAt).toISOString(),
-    url: await createStoredFileUrl(record.objectKey)
+    url: await createStoredFileUrl(platform, record)
   }
 }
 
@@ -77,8 +80,8 @@ function fromIndexedFile(record: {
   }
 }
 
-async function uploadFile(request: Request) {
-  const { client, userId } = await authenticateRequest(request)
+async function uploadFile(platform: AppPlatform, request: Request) {
+  const { client, userId } = await authenticateRequest(request, platform.env.CONVEX_URL)
   const formData = await request.formData()
   const candidate = formData.get('file')
   if (!(candidate instanceof File)) return json({ error: 'Choose a file to upload.' }, 400)
@@ -103,7 +106,7 @@ async function uploadFile(request: Request) {
     createdAt: Date.now()
   }
 
-  await uploadStoredFile(record, new Uint8Array(await candidate.arrayBuffer()))
+  await uploadStoredFile(platform, record, new Uint8Array(await candidate.arrayBuffer()))
 
   try {
     const indexed = await client.mutation(api.files.create, {
@@ -118,21 +121,24 @@ async function uploadFile(request: Request) {
       objectKey: record.objectKey,
       createdAt: record.createdAt
     })
-    return json({ file: await toStoredFile(fromIndexedFile(indexed)) }, 201)
+    return json({ file: await toStoredFile(platform, fromIndexedFile(indexed)) }, 201)
   } catch (error) {
-    await deleteStoredFile(record.objectKey).catch(() => {})
+    await deleteStoredFile(platform, record.objectKey).catch(() => {})
     throw error
   }
 }
 
 export async function handleFiles(context: Context) {
   try {
-    if (context.request.method === 'POST') return await uploadFile(context.request)
+    const platform = requirePlatform(context.platform)
+    if (context.request.method === 'POST') return await uploadFile(platform, context.request)
 
     if (context.request.method === 'GET') {
-      const { client } = await authenticateRequest(context.request)
+      const { client } = await authenticateRequest(context.request, platform.env.CONVEX_URL)
       const indexed = await client.query(api.files.list, { limit: 200 })
-      const files = await Promise.all(indexed.map((file) => toStoredFile(fromIndexedFile(file))))
+      const files = await Promise.all(
+        indexed.map((file) => toStoredFile(platform, fromIndexedFile(file)))
+      )
       return json({ files })
     }
 
@@ -145,17 +151,18 @@ export async function handleFiles(context: Context) {
 
 export async function handleFileById(context: Context) {
   try {
-    const { client } = await authenticateRequest(context.request)
+    const platform = requirePlatform(context.platform)
     const externalId = context.params.id
-    const indexed = await client.query(api.files.getByExternalId, { externalId })
-    if (!indexed) return json({ error: 'File not found.' }, 404)
 
     if (context.request.method === 'GET') {
-      return Response.redirect(await createStoredFileUrl(indexed.objectKey), 302)
+      return await serveStoredFile(platform, externalId, context.request)
     }
 
     if (context.request.method === 'DELETE') {
-      await deleteStoredFile(indexed.objectKey)
+      const { client } = await authenticateRequest(context.request, platform.env.CONVEX_URL)
+      const indexed = await client.query(api.files.getByExternalId, { externalId })
+      if (!indexed) return json({ error: 'File not found.' }, 404)
+      await deleteStoredFile(platform, indexed.objectKey)
       await client.mutation(api.files.remove, { externalId })
       return json({ ok: true })
     }

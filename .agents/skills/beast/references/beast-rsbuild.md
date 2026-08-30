@@ -13,7 +13,7 @@ export default defineConfig({
 })
 ```
 
-Without Octane routes, this preserves ordinary Rsbuild entries. With `octane.config.ts`, render routes can target `.btsx` and use Octane's browser hydration and Node SSR environments. Inline options plus project Strong-mode and renderer settings are forwarded to the BTSX transform.
+Without Octane routes, this preserves ordinary Rsbuild entries. With `octane.config.ts`, render routes can target `.btsx` and use Octane's browser hydration and Node SSR environments. Inline options plus project Strong-mode, `nativeReads`, and renderer settings are forwarded to the BTSX transform.
 
 Do not install both `beastOctane()` and a second Octane compiler plugin for the same module graph. Use Rsbuild's Beast-only `beast()` adapter only when `pluginOctane()` is already configured.
 

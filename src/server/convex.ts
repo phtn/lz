@@ -22,15 +22,15 @@ function getBearerToken(request: Request) {
   return token
 }
 
-function getConvexUrl() {
-  const url = process.env.CONVEX_URL?.trim()
+function getConvexUrl(value: string | undefined) {
+  const url = value?.trim()
   if (!url) throw new Error('CONVEX_URL is not configured.')
   return url
 }
 
-export async function authenticateRequest(request: Request) {
+export async function authenticateRequest(request: Request, convexUrl: string | undefined) {
   const token = getBearerToken(request)
-  const client = new ConvexHttpClient(getConvexUrl(), {
+  const client = new ConvexHttpClient(getConvexUrl(convexUrl), {
     auth: token,
     logger: false
   })

@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "drop-zone-beast",
+  "main": "./dist/server/worker.js",
+  "compatibility_date": "2026-08-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS"
+  },
+  "r2_buckets": [
+    {
+      "binding": "DROPZONE_FILES",
+      "bucket_name": "beast"
+    }
+  ]
+}

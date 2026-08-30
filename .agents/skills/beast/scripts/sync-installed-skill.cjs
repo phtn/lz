@@ -22,6 +22,7 @@ if (path.relative(root, target) !== expectedRelativeTarget) {
 
 const entries = [
   ".gitignore",
+  "CHANGELOG.md",
   "LICENSE",
   "README.md",
   "SKILL.md",
