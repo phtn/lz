@@ -18,9 +18,7 @@ import MobileHeader from './MobileHeader.btsx'
 import Sidebar from './Sidebar.btsx'
 
 component EmptyFileDetails
-  aside(className="h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b] max-[1100px]:hidden" aria-label="File details")
-    div(className="flex min-h-[54px] items-center justify-between border-b border-sidebar-border px-[15px] text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground dark:min-h-[50px] dark:border-[#0b0b0b] dark:bg-[#303030] dark:text-[#b7b7b7]")
-      span File intelligence
+  aside(className="h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-surface dark:shadow-[inset_0_1.25px_0_#3b3b3b,inset_0.75px_0_0_#3b3b3b] max-[1100px]:hidden" aria-label="File details")
     div(className="grid min-h-[calc(100%-54px)] content-center justify-items-center p-7 text-center")
       span(className="grid size-12 place-items-center rounded-[14px] bg-muted text-muted-foreground")
         Icon(name="search")
@@ -242,7 +240,7 @@ setup
     [library, selectedFileId]
   );
 
-div(className="min-h-screen dark:bg-[#181818]")
+div(className="min-h-screen bg-background")
   MobileHeader(
     ~ search={search}
     ~ setSearch={setSearch}
@@ -250,7 +248,7 @@ div(className="min-h-screen dark:bg-[#181818]")
     ~ searchInputRef={searchInputRef}
     ~ )
 
-  div(className="grid h-[calc(100vh-72px)] grid-cols-[218px_minmax(0,1fr)_304px] gap-[18px] p-[18px] dark:h-[calc(100vh-52px)] dark:grid-cols-[280px_minmax(0,1fr)_330px] dark:gap-px dark:bg-[#090909] dark:p-px max-[1320px]:grid-cols-[198px_minmax(0,1fr)_276px] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_310px] max-[1100px]:grid-cols-[198px_minmax(0,1fr)] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)] max-[820px]:h-[calc(100vh-64px)] max-[820px]:grid-cols-[minmax(0,1fr)] max-[820px]:p-3 max-[820px]:dark:h-[calc(100vh-64px)] max-[820px]:dark:grid-cols-[minmax(0,1fr)] max-[820px]:dark:gap-px max-[820px]:dark:p-px")
+  div(className="grid h-[calc(100vh-72px)] grid-cols-[218px_minmax(0,1fr)_304px] gap-[18px] px-5 pb-5 dark:h-[calc(100vh-52px)] dark:grid-cols-[280px_minmax(0,1fr)_330px] dark:gap-px dark:bg-[#090909] dark:p-px max-[1320px]:grid-cols-[198px_minmax(0,1fr)_276px] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_310px] max-[1100px]:grid-cols-[198px_minmax(0,1fr)] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)] max-[820px]:h-[calc(100vh-64px)] max-[820px]:grid-cols-[minmax(0,1fr)] max-[820px]:p-3 max-[820px]:dark:h-[calc(100vh-64px)] max-[820px]:dark:grid-cols-[minmax(0,1fr)] max-[820px]:dark:gap-px max-[820px]:dark:p-px")
     Sidebar(
       ~ activeQueueCount={activeQueueCount}
       ~ library={library}

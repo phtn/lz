@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rsbuild build",
-    "dev:cloudflare": "bun run build && wrangler dev",
+    "dev:cf": "bun run build && wrangler dev --env dev --live-reload",
     "preview": "wrangler dev",
     "start": "wrangler dev",
     "deploy": "bun run build && wrangler deploy",

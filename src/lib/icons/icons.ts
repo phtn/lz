@@ -298,6 +298,18 @@ export const icons = {
       '<path d="M10.377 6.314a.6.6 0 0 1 1.073 0l.91 1.821 1.822.91a.6.6 0 0 1 .077 1.028l-.077.046-1.822.911-.91 1.821a.6.6 0 0 1-1.027.078l-.046-.078-.911-1.821-1.821-.91a.6.6 0 0 1-.078-1.028l.078-.046 1.82-.91zM4.414 11.15a.6.6 0 1 1 0 1.2H2.08a.6.6 0 1 1 0-1.2zm6.499-3.226-.463.927a.6.6 0 0 1-.268.268l-.926.463.926.464a.6.6 0 0 1 .23.201l.04.067.462.926.464-.926a.6.6 0 0 1 .201-.23l.067-.038.927-.464-.927-.463a.6.6 0 0 1-.23-.201l-.038-.068zm-5.167-.942a.6.6 0 1 1 0 1.2H2.08a.6.6 0 1 1 0-1.2zm7.334-4.166a.6.6 0 0 1 0 1.2h-11a.6.6 0 0 1 0-1.2z" transform-origin="0 0" fill="currentColor"/>',
     viewBox: '0 0 16 16',
     set: 'svg'
+  },
+  expand: {
+    symbol:
+      '<g transform="scale(0.667)"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V5a1 1 0 0 1 1-1h3M4 16v3a1 1 0 0 0 1 1h3M20 8V5a1 1 0 0 0-1-1h-3m4 12v3a1 1 0 0 1-1 1h-3"/></g>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  close: {
+    symbol:
+      '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.334" d="m3.76 3.76 8.489 8.49m-8.49 0 8.49-8.49"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
   }
 }
 

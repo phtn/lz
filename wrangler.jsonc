@@ -13,5 +13,16 @@
       "binding": "DROPZONE_FILES",
       "bucket_name": "beast"
     }
-  ]
+  ],
+  "env": {
+    "dev": {
+      "r2_buckets": [
+        {
+          "binding": "DROPZONE_FILES",
+          "bucket_name": "beast",
+          "remote": true
+        }
+      ]
+    }
+  }
 }
