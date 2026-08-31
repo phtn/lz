@@ -75,12 +75,7 @@ header(
     kbd ⌘ K
 
   div(className="w-full flex items-center justify-end gap-3")
-    Button(
-      ~ size="sm"
-      ~ variant="dark"
-      ~ type="button"
-      ~ icon="folder"
-      ~ )
+
     // span(className="inline-flex items-center gap-[7px] whitespace-nowrap text-[11px] text-muted-foreground max-[1320px]:hidden")
     //   span(className="size-[7px] rounded-full bg-positive shadow-[0_0_0_3px_color-mix(in_oklab,var(--positive)_18%,transparent)]")
     //   | Private OCR

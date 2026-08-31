@@ -57,7 +57,7 @@ fragment
 
         div(className="flex items-start gap-3 p-3")
           span(className="grid size-[47px] shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:rounded-full dark:border dark:border-[#111] dark:bg-[#242424] dark:shadow-[inset_0_1px_0_#474747,0_2px_4px_#151515] [&>div]:flex")
-            Icon(name={getFileIcon(file.name, file.mimeType)} size={25})
+            Icon(name={getFileIcon(file.name, file.mimeType)} )
           div.min-w-0
             h2(className="mt-[3px] line-clamp-2 overflow-hidden text-[13px] leading-[1.35] tracking-[-0.02em]") #{file.name}
             p(className="mb-0 mt-[7px] text-[9px] text-muted-foreground [&_span]:mx-1")
@@ -65,16 +65,16 @@ fragment
               span •
               | #{formatFileDate(file.createdAt)}
 
-        div(className="mt-4 grid grid-cols-[minmax(0,1fr)_38px] gap-2 [&>a]:inline-flex [&>a]:h-[37px] [&>a]:cursor-pointer [&>a]:items-center [&>a]:justify-center [&>a]:gap-[7px] [&>a]:rounded-[9px] [&>a]:border [&>a]:border-brand [&>a]:bg-brand [&>a]:text-[10px] [&>a]:font-[650] [&>a]:text-brand-foreground [&>a]:no-underline [&>a:hover]:bg-brand-strong dark:[&>a]:rounded-sm dark:[&>a]:border-[#111] dark:[&>a]:shadow-[inset_0_1px_0_#efefef] [&>button]:inline-flex [&>button]:h-[37px] [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-center [&>button]:gap-[7px] [&>button]:rounded-[9px] [&>button]:border [&>button]:border-sidebar-border [&>button]:bg-surface [&>button]:text-[10px] [&>button]:font-[650] [&>button]:text-foreground dark:[&>button]:rounded-sm dark:[&>button]:border-[#111] dark:[&>button]:bg-[#292929] dark:[&>button]:shadow-[inset_0_1px_0_#444,inset_0.5px_1px_0.5px_#444] [&>button:hover]:border-destructive/30 [&>button:hover]:bg-destructive/10 [&>button:hover]:text-destructive")
+        div(className="p-3 mt-4 grid grid-cols-[minmax(0,1fr)_38px] gap-2 [&>a]:inline-flex [&>a]:h-[37px] [&>a]:cursor-pointer [&>a]:items-center [&>a]:justify-center [&>a]:gap-[7px] [&>a]:rounded-[9px] [&>a]:border [&>a]:border-brand [&>a]:bg-brand [&>a]:text-[10px] [&>a]:font-[650] [&>a]:text-brand-foreground [&>a]:no-underline [&>a:hover]:bg-brand-strong dark:[&>a]:rounded-sm dark:[&>a]:border-[#111] dark:[&>a]:shadow-[inset_0_1px_0_#efefef] [&>button]:inline-flex [&>button]:h-[37px] [&>button]:cursor-pointer [&>button]:items-center [&>button]:justify-center [&>button]:gap-[7px] [&>button]:rounded-[9px] [&>button]:border [&>button]:border-sidebar-border [&>button]:bg-surface [&>button]:text-[10px] [&>button]:font-[650] [&>button]:text-foreground dark:[&>button]:rounded-sm dark:[&>button]:border-[#111] dark:[&>button]:bg-[#292929] dark:[&>button]:shadow-[inset_0_1px_0_#444,inset_0.5px_1px_0.5px_#444] [&>button:hover]:border-destructive/30 [&>button:hover]:bg-destructive/10 [&>button:hover]:text-destructive")
           a(href={file.url} target="_blank" rel="noopener noreferrer")
             Icon(name="external-link")
             | Open file
           button(type="button" onClick={() => { void deleteFile(file.id); onClose(); }})
-            Icon(name="trash-delete")
-        div(className="p-3")
+            Icon(name="close")
+        div(className="p-3 hidden")
           HyperButton
 
-        section(className="mt-[19px] border-t border-sidebar-border pt-[18px]")
+        section(className="px-3 mt-[19px] border-t border-sidebar-border pt-[18px]")
           div(className="flex items-center justify-between text-muted-foreground [&_svg]:text-brand")
             h3(className="m-0 text-[10px] font-[680] text-foreground") Smart classification
             Icon(name="sparkles" size={15})
@@ -87,14 +87,14 @@ fragment
           div(className="mt-[7px] h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true")
             span(className="block h-full rounded-[inherit] bg-positive" style={{ width: `${file.confidence}%` }})
 
-        section(className="mt-[19px] border-t border-sidebar-border pt-[18px]")
+        section(className="px-3 mt-[19px] border-t border-sidebar-border pt-[18px]")
           div(className="flex items-center justify-between text-muted-foreground [&_svg]:text-brand")
             h3(className="m-0 text-[10px] font-[680] text-foreground") Content summary
             Icon(name="shield-check")
           p(className="mt-[11px] line-clamp-7 overflow-hidden text-[9.5px] leading-[1.65] text-muted-foreground") #{file.excerpt || 'No readable text was found. This file was organized using its name and file type.'}
           span(className="mt-[11px] inline-flex items-center text-[8.5px] font-[620] text-positive") Analyzed privately on this device
 
-        section(className="mt-[19px] grid gap-[13px] border-t border-sidebar-border pt-[18px]")
+        section(className="px-3 mt-[19px] grid gap-[13px] border-t border-sidebar-border pt-[18px]")
           h3(className="m-0 text-[10px] font-[680] text-foreground") Activity
           div(className="relative flex items-start gap-[9px]")
             span(className="grid size-[25px] shrink-0 place-items-center rounded-full bg-success/15 text-positive")
