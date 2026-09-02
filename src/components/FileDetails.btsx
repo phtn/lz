@@ -19,7 +19,7 @@ import type { StoredFile } from '@/types/file'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
 import {Icon} from '@/lib/icons'
-import { HyperButton } from '@/components/ui/hyper'
+import HyperButton from '@/components/ui/hyper/hyper-button.btsx'
 
 props { file, onClose, deleteFile }: FileDetailsProps
 

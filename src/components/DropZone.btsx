@@ -13,6 +13,7 @@ import { useEffect, useRef } from 'octane'
 import {Icon} from '@/lib/icons'
 import { Button } from './ui'
 import { cn } from '@/lib/utils'
+import HyperButton from "./ui/hyper/hyper-button.btsx";
 
 props { isDragging, setIsDragging, isExpanded, onExpandedChange, addFiles, fileInputRef }: DropZoneProps
 setup
@@ -50,7 +51,7 @@ section
 
   section#drop-zone-surface(
     ~ className={cn(
-      ~ 'isolate min-h-[118px] relative flex items-center overflow-hidden rounded-2xl border border-dashed border-border px-[22px] py-5 ',
+      ~ 'isolate min-h-12 relative flex items-center overflow-hidden rounded-2xl border border-dashed border-border px-[22px] py-5 ',
       ~ 'bg-[radial-gradient(circle_at_86%_18%,color-mix(in_oklab,var(--brand)_9%,transparent),transparent_27%),linear-gradient(135deg,var(--surface)_0%,var(--background)_100%)]',
       ~ 'shadow-[0_1px_2px_rgba(25,31,55,0.04)] transition-[min-height,border-color,box-shadow,transform] duration-[620ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
       ~ 'before:pointer-events-none before:absolute before:inset-[18px] before:z-0 before:rounded-[13px] before:border before:border-dashed before:border-brand/40 before:opacity-0',
@@ -107,7 +108,6 @@ section
 
         div.flex.items-center.space-x-4
           Button(variant="default" className="dark:!rounded-sm dark:!bg-brand dark:!text-[#181818] dark:!shadow-[inset_0_1px_0_#efefef,0_0_0_1px_#111]" type="button" onClick={() => fileInputRef.current?.click()})
-            span Browse files
             Icon(name="new-folder")
 
     div#expanded-drop-zone(

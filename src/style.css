@@ -35,6 +35,7 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-sunken: var(--sunken);
+  --color-deep: var(--deep);
   --color-soft: var(--soft);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
@@ -101,6 +102,7 @@
   --sunken: oklch(0.97 0.003 264.54);
   --surface: oklch(0.998 0 0);
   --soft: oklch(0.2046 0 0 / 50%);
+  --deep: oklch(0.922 0 90);
   --muted: oklch(0.9401 0 0);
   --muted-foreground: oklch(0.6764 0 0);
   --border: oklch(0.85 0 0);

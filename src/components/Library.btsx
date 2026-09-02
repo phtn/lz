@@ -29,6 +29,7 @@ import type { CategoryName, StoredFile } from '@/types/file'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
 import {Icon} from '@/lib/icons'
+import { cn } from '@/lib/utils'
 
 component EmptyLibrary
   props { filtered }: EmptyLibraryProps
@@ -75,15 +76,15 @@ fragment
             Icon(name="chevron-right" size={16})
 
   section#library(className="mt-[18px] scroll-mt-4 overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:mt-0 dark:h-full dark:rounded-[4px] dark:border dark:border-border dark:bg-surface dark:shadow-[inset_0.5px_1.25px_0_#3b3b3b]" aria-labelledby="library-title")
-    div(className="flex min-h-16 items-center justify-between gap-5 border-b border-border/50 px-4 py-3 dark:min-h-[50px] dark:rounded-t-[2px] dark:border-[#0b0b0b] dark:bg-[#303030] dark:py-2 max-[620px]:items-start max-[620px]:gap-[11px] dark:bg-[#242424] dark:shadow-[inset_0.75px_2px_0.75px_#3b3b3b,inset_-0.75px_0_0_#3b3b3b]")
-      div(className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-sm [&_p]:text-foreground")
+    div(className="flex items-center justify-between border-b border-border/50 px-4 dark:rounded-t-[2px] dark:border-[#0b0b0b] dark:bg-[#303030] max-[620px]:items-start dark:bg-[#242424] dark:shadow-[inset_0.75px_2px_0.75px_#3b3b3b,inset_-0.75px_0_0_#3b3b3b]")
+      div(className="flex items-center h-10 gap-2 text-xs text-muted-foreground [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-sm [&_p]:text-foreground")
         span Files
         Icon(name="down" className="-rotate-90 dark:text-indigo-300")
         p#library-title #{activeCategory === 'All' ? 'All files' : activeCategory}
-      div(className="ml-auto flex shrink-0 items-center gap-2.5")
-        div(className="flex items-center rounded-sm border border-border/50 divide-x divide-border bg-accent overflow-hidden dark:border-border [&_button]:grid [&_button]:h-[27px] [&_button]:w-[29px] [&_button]:cursor-pointer [&_button]:place-items-center [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:text-muted-foreground [&_button:hover]:bg-surface [&_button:hover]:text-brand [&_button:hover]:shadow-[0_1px_3px_rgba(30,36,60,0.08)]" aria-label="File view")
+      div(className="ml-auto flex items-center justify-between h-10")
+        div(className="flex items-center justify-between rounded-sm dark:rounded-xs h-6 dark:h-8 w-16 border border-border/80 divide-x divide-border bg-accent overflow-hidden dark:border-border [&_button]:cursor-pointer " aria-label="File view")
           button(
-            ~ className={viewMode === 'list' ? 'bg-surface! text-brand! shadow-[0_1px_3px_rgba(30,36,60,0.08)] rounded-none!' : 'rounded-none!'}
+            ~ className={cn('size-full bg-surface rounded-none text-muted-foreground', {'dark:text-indigo-300 bg-deep shadow-inner' :viewMode === 'list'})}
             ~ type="button"
             ~ aria-label="List view"
             ~ aria-pressed={viewMode === 'list'}
@@ -91,7 +92,7 @@ fragment
             ~ )
             Icon(name="list")
           button(
-            ~ className={viewMode === 'grid' ? 'bg-surface! rounded-none! text-brand! shadow-[0_1px_3px_rgba(30,36,60,0.08)]' : 'rounded-none!'}
+            ~ className={cn('size-full bg-surface rounded-none text-muted-foreground', {'dark:text-indigo-300 bg-deep shadow-inner' :viewMode === 'grid'})}
             ~ type="button"
             ~ aria-label="Grid view"
             ~ aria-pressed={viewMode === 'grid'}

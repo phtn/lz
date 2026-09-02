@@ -14,26 +14,26 @@
     "check": "bun run typecheck && bun run build"
   },
   "dependencies": {
-    "@octanejs/adapter-cloudflare": "0.0.39",
-    "@octanejs/lucide": "0.1.44",
-    "@octanejs/rsbuild-plugin": "0.1.44",
-    "beast-tsrx": "0.2.9",
+    "@octanejs/adapter-cloudflare": "0.0.42",
+    "@octanejs/lucide": "0.1.47",
+    "@octanejs/rsbuild-plugin": "0.1.47",
+    "beast-tsrx": "0.2.10",
     "clsx": "^2.1.1",
     "convex": "^1.45.0",
     "firebase": "^12.18.0",
-    "octane": "0.1.49",
+    "octane": "0.2.2",
     "pdfjs-dist": "^6.3.289",
     "tailwind-merge": "^3.6.0",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260830.1",
-    "@rsbuild/core": "^2.2.1",
+    "@rsbuild/core": "^2.2.2",
     "@tailwindcss/postcss": "^4.3.3",
-    "@tsrx/typescript-plugin": "0.3.128",
-    "@types/node": "^26.4.0",
+    "@tsrx/typescript-plugin": "0.3.129",
+    "@types/node": "^26.4.1",
     "tailwindcss": "^4.1.8",
     "typescript": "^7.0.2",
-    "wrangler": "^4.127.1"
+    "wrangler": "^4.128.0"
   }
 }

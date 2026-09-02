@@ -121,7 +121,7 @@ export const icons = {
   },
   search: {
     symbol:
-      '<path fill="currentColor" fill-rule="evenodd" d="M1.5 6.5a5 5 0 1 1 10 0 5 5 0 0 1-10 0m5-6.5a6.5 6.5 0 1 0 4.04 11.6l3.43 3.43.53.53 1.06-1.06-.53-.53-3.43-3.43A6.5 6.5 0 0 0 6.5 0" clip-rule="evenodd" shape-rendering="geometricprecision" transform-origin="0 0"/>',
+      '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.334" d="m10.591 10.591 2.83 2.83m-1.415-6.417a5.003 5.003 0 1 1-10.005 0 5.003 5.003 0 0 1 10.005 0Z"/>',
     viewBox: '0 0 16 16',
     set: 'svg'
   },
@@ -308,6 +308,18 @@ export const icons = {
   close: {
     symbol:
       '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.334" d="m3.76 3.76 8.489 8.49m-8.49 0 8.49-8.49"/>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  menu: {
+    symbol:
+      '<g transform="scale(0.667)"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 6h10M4 12h16M7 12h13M7 18h10"/></g>',
+    viewBox: '0 0 16 16',
+    set: 'svg'
+  },
+  bookmark: {
+    symbol:
+      '<g transform="scale(0.667)"><path fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M5 4a1 1 0 0 1 1-1h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1z"/><path fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M11 3h4v10l-2-2-2 2z"/></g>',
     viewBox: '0 0 16 16',
     set: 'svg'
   }

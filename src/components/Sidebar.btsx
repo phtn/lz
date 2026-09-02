@@ -26,7 +26,7 @@ setup
     .filter((category) => category !== 'All' && (categoryCounts.get(category) ?? 0) > 0);
 
 
-aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface pb-3 shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:rounded-bl-md dark:border-[0.33px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
+aside(className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-sidebar-border bg-surface pt-3 shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:gap-px dark:overflow-hidden dark:rounded-[4px] dark:rounded-bl-md dark:border-[0.33px] dark:border-[#050505] dark:bg-[#090909] dark:p-0 dark:shadow-none max-[820px]:hidden")
   div(className="contents dark:flex dark:min-h-0 dark:flex-1 dark:flex-col dark:overflow-y-auto dark:rounded-[4px] dark:bg-[#272727] dark:p-0 dark:shadow-[inset_0.75px_1px_0.75px_#393939,inset_-1px_0_0_#393939]")
     label(className="mb-1 px-1.5 hidden h-11 items-center gap-2 border-b-[0.5px] border-[#202020] bg-[#202020] text-[#9a9a9a] shadow-[inset_0_1px_2px_#222] dark:flex focus-within:border-[#5a5a5a] [&_svg]:size-4 dark:shadow-[inset_0.75px_1px_0.75px_#393939,inset_-1px_0_0_#393939]")
       // Icon(name="search" size={12} className="size-3.5!")

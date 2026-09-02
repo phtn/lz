@@ -23,7 +23,6 @@ module
     className?: string
     id?: string
     title?: string
-    tabIndex?: number
     onClick?: (event: MouseEvent) => void
     "aria-label"?: string
     "aria-describedby"?: string
@@ -92,14 +91,14 @@ module
 
   const BUTTON_BASE_CLASS = "group relative isolate inline-flex min-w-0 shrink-0 touch-manipulation select-none appearance-none items-center justify-center overflow-hidden border-0 align-middle font-poly text-xs leading-4 transition-[filter,box-shadow] duration-200 ease-out focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 active:scale-[0.97] disabled:scale-100 disabled:opacity-100 aria-disabled:scale-100 transition-all duration-200 ease-out motion-reduce:transform-none motion-reduce:transition-none"
   const BUTTON_CONTENT_CLASS = "relative z-10 inline-flex min-w-0 items-center justify-center gap-3 whitespace-nowrap group-active:opacity-95 group-aria-disabled:opacity-100"
-  const BUTTON_LIGHT_OVERLAY_CLASS = "pointer-events-none absolute inset-0 rounded-[inherit] bg-white/30 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-disabled:opacity-0 group-aria-disabled:opacity-0 motion-reduce:transition-none"
+  const BUTTON_LIGHT_OVERLAY_CLASS = "pointer-events-none absolute inset-0 rounded-[inherit] bg-white/30 opacity-0 transition-opacity duration-200 ease-out group-disabled:opacity-0 group-aria-disabled:opacity-0 motion-reduce:transition-none"
   const BUTTON_SPINNER_CLASS = "shrink-0 rounded-full border-[1.5px] border-current border-r-transparent motion-reduce:animate-none"
 
   const BUTTON_VARIANT_CLASSES = {
     default: "bg-[linear-gradient(in_oklab_180deg,oklab(92.2%_0_0)_0%,oklab(91.3%_0_0)_100%)] text-foreground! shadow-[inset_0_1px_0_#FFFFFF54,0_3px_4px_-1px_#00000026,0_0_0_1px_#D4D4D4]",
-    dark: "bg-[linear-gradient(in_oklab_180deg,oklab(30%_0_0)_0%,oklab(25%_0_0)_100%)] text-[#FCFCFC]! shadow-[inset_0_0.75px_1px_#FFFFFF18,inset_0_-1px_1.2px_0.35px_#121212,0_2px_4px_-1px_#0D0D0D75,0_0_0_1px_#333333] group-active:shadow-[inset_0_0.15px_0.15px_#FFFFFF16,inset_0_-0.25px_0.2px_0.35px_#121212,0_0.25px_0.75px_-0.25px_#0D0D0D70,0_0_0_0.25px_#333333] hover:brightness-105 disabled:hover:brightness-100 aria-disabled:hover:brightness-100",
-    primary: "bg-[linear-gradient(in_oklab_180deg,oklab(56.7%_0_0)_0%,oklab(64.2%_0_0)_100%)] text-[#FCFCFC]! shadow-[inset_0_0.5px_1px_#FFFFFF26,inset_0_-1px_1.2px_0.35px_#121212,0_2px_4px_-1px_#0D0D0D80,0_0_0_1px_#333333] hover:brightness-110 disabled:hover:brightness-100 aria-disabled:hover:brightness-100",
-    secondary: "bg-brand/10 hover:bg-brand/15 text-brand! _shadow-[inset_0_1px_0_#FFFFFF54,0_3px_4px_-1px_#00000026,0_0_0_1px_#D4D4D4] hover:brightness-110 disabled:hover:brightness-100 aria-disabled:hover:brightness-100",
+    dark: "bg-[linear-gradient(in_oklab_180deg,oklab(30%_0_0)_0%,oklab(25%_0_0)_100%)] text-[#FCFCFC]! shadow-[inset_0_0.75px_1px_#FFFFFF18,inset_0_-1px_1.2px_0.35px_#121212,0_2px_4px_-1px_#0D0D0D75,0_0_0_1px_#333333] group-active:shadow-[inset_0_0.15px_0.15px_#FFFFFF16,inset_0_-0.25px_0.2px_0.35px_#121212,0_0.25px_0.75px_-0.25px_#0D0D0D70,0_0_0_0.25px_#333333]",
+    primary: "bg-[linear-gradient(in_oklab_180deg,oklab(56.7%_0_0)_0%,oklab(64.2%_0_0)_100%)] text-[#FCFCFC]! shadow-[inset_0_0.5px_1px_#FFFFFF26,inset_0_-1px_1.2px_0.35px_#121212,0_2px_4px_-1px_#0D0D0D80,0_0_0_1px_#333333]",
+    secondary: "bg-brand/10 text-brand! _shadow-[inset_0_1px_0_#FFFFFF54,0_3px_4px_-1px_#00000026,0_0_0_1px_#D4D4D4]",
     // oklch(0.559 0.201 274.93) oklab(0.559 0.017 -0.2 / 1)
   } as const satisfies Record<Buttonvariant, string>
 
@@ -132,7 +131,7 @@ component Content
       elseif icon
         Icon(name={icon} size={BUTTON_ICON_SIZES[size]} className="m-0 shrink-0")
 
-props { size = "sm", variant = "default", type = "button", href, target, rel, download, referrerPolicy, disabled = false, pending = false, pendingLabel, label, icon, iconPosition = "left", className, id, title, tabIndex, form, name, value, style, onClick, "aria-label": ariaLabel, "aria-describedby": ariaDescribedBy, "aria-pressed": ariaPressed, "aria-current": ariaCurrent, children }: PrimaryButtonProps
+props { size = "sm", variant = "default", type = "button", href, target, rel, download, referrerPolicy, disabled = false, pending = false, pendingLabel, label, icon, iconPosition = "left", className, id, title, form, name, value, style, onClick, "aria-label": ariaLabel, "aria-describedby": ariaDescribedBy, "aria-pressed": ariaPressed, "aria-current": ariaCurrent, children }: PrimaryButtonProps
 
 setup
   const isInteractionDisabled = disabled || pending
@@ -149,10 +148,10 @@ setup
   }
 
 if type === "a"
-  a(id={id} title={title} href={isInteractionDisabled ? undefined : href} target={target} rel={anchorRel} download={download} referrerPolicy={referrerPolicy} tabIndex={isInteractionDisabled ? -1 : tabIndex} className={buttonClassName} style={style} onClick={handleClick} aria-label={ariaLabel} aria-describedby={ariaDescribedBy} aria-current={ariaCurrent} aria-disabled={isInteractionDisabled || undefined} aria-busy={pending || undefined})
+  a(id={id} title={title} href={isInteractionDisabled ? undefined : href} target={target} rel={anchorRel} download={download} referrerPolicy={referrerPolicy} className={buttonClassName} style={style} onClick={handleClick} aria-label={ariaLabel} aria-describedby={ariaDescribedBy} aria-current={ariaCurrent} aria-disabled={isInteractionDisabled || undefined} aria-busy={pending || undefined})
     Content(size={size} variant={variant} label={resolvedLabel} icon={icon} iconPosition={iconPosition} pending={pending})
       | #{children}
 else
-  button(id={id} title={title} type={type} disabled={disabled} form={form} name={name} value={value} tabIndex={tabIndex} className={buttonClassName} style={style} onClick={handleClick} aria-label={ariaLabel} aria-describedby={ariaDescribedBy} aria-pressed={ariaPressed} aria-disabled={pending || undefined} aria-busy={pending || undefined})
+  button(id={id} title={title} type={type} disabled={disabled} form={form} name={name} value={value} className={buttonClassName} style={style} onClick={handleClick} aria-label={ariaLabel} aria-describedby={ariaDescribedBy} aria-pressed={ariaPressed} aria-disabled={pending || undefined} aria-busy={pending || undefined})
     Content(size={size} variant={variant} label={resolvedLabel} icon={icon} iconPosition={iconPosition} pending={pending})
       | #{children}

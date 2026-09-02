@@ -8,15 +8,16 @@ module
   }
 
 import { use, useState, useSyncExternalStore } from 'octane'
-import { ThemeContext } from '@/context/theme'
+import { ThemeContext, theme } from '@/context/theme'
 import { getAuthStateReady, getCurrentUser, getServerAuthStateReady, getServerAuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
 import {Icon} from '@/lib/icons'
 import {Button} from "./ui";
 import {cn} from "@/lib/utils";
+import HyperButton from "./ui/hyper/hyper-button.btsx";
 
 props { search, setSearch, fileInputRef, searchInputRef }: MobileHeaderProps
 setup
-  const { toggleTheme } = use(ThemeContext);
+  const { toggleTheme, theme } = use(ThemeContext);
   const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
   const isAuthStateReady = useSyncExternalStore(subscribeToAuthState, getAuthStateReady, getServerAuthStateReady);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -38,7 +39,7 @@ setup
   };
 
 header(
-  ~ className={cn("relative z-50 grid h-[72px] bg-sunken items-center gap-5 border-border px-5 dark:px-0",
+  ~ className={cn("relative z-50 grid h-[72px] bg-sunken items-center gap-5 border-border px-5 dark:px-3",
   ~ 'dark:rounded-[4px] dark:border-x-[2px] dark:border-b-[0.5px] dark:border-t-[1.5px] dark:h-[52px] dark:grid-cols-[280px_minmax(0,1fr)_auto] dark:shadow-[inset_0.25px_1px_0_#3a3a3a]',
   ~ 'max-[820px]:px-3.5 max-[820px]:dark:h-16 max-[820px]:dark:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:dark:gap-3 max-[820px]:dark:px-0',
   ~ 'max-[1320px]:grid-cols-[198px_minmax(280px,1fr)_minmax(200px,310px)_auto] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_auto] max-[1100px]:grid-cols-[190px_minmax(250px,1fr)_minmax(210px,320px)_auto] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)_auto] max-[820px]:h-16 max-[820px]:grid-cols-[auto_minmax(190px,1fr)_auto] max-[820px]:gap-3 grid-cols-[218px_minmax(330px,1fr)_minmax(220px,350px)_auto]')}
@@ -47,11 +48,19 @@ header(
     span(className="size-3 rounded-full bg-brand-strong")
   strong(className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 font-poly font-semibold text-foreground tracking-[-0.01em] dark:block max-[820px]:dark:hidden") DropZone
 
-  div(className="inline-flex items-center gap-2.5 text-[19px] font-[760] tracking-[-0.045em] text-foreground dark:invisible max-[820px]:dark:visible max-[820px]:[&_span:last-child]:hidden" aria-label="DropZone home")
-    Icon(name="chute" size={24})
+  div(className="inline-flex items-center dark:ps-3 gap-2.5 text-lg font-[760] tracking-[-0.045em] text-foreground dark:invisible max-[820px]:dark:visible max-[820px]:[&_span:last-child]:hidden" aria-label="DropZone home")
+    HyperButton(variant={theme === 'dark' ? 'dark' : ''} className="md:hidden" onClick={undefined})
+      Icon(name="folder" className="")
+    HyperButton(variant={theme === 'dark' ? 'dark' : ''} className="md:hidden" onClick={undefined})
+      Icon(name="clock" className="")
+    HyperButton(variant={theme === 'dark' ? 'dark' : ''} className="md:hidden" onClick={undefined})
+      Icon(name="bookmark" className="")
+    HyperButton(variant={theme === 'dark' ? 'dark' : ''} className="md:hidden" onClick={undefined})
+      Icon(name="search" className="")
+    Icon(name="chute" size={24} className="hidden md:flex dark:hidden")
     span.tracking-normal dropzone
 
-  nav(className="flex items-center gap-3 dark:hidden max-[820px]:hidden [&_button]:inline-flex [&_button]:h-10 [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-2 [&_button]:rounded-[10px] [&_button]:border [&_button]:border-transparent [&_button]:bg-transparent [&_button]:px-3.5 [&_button]:text-[13px] [&_button]:font-[570] [&_button]:text-muted-foreground [&_button]:transition-all [&_button]:duration-150 [&_button:hover]:bg-accent [&_button:hover]:text-foreground max-[1100px]:[&_button:nth-child(3)]:hidden" aria-label="Workspace navigation")
+  nav(className="hidden _flex items-center gap-3 dark:hidden max-[820px]:hidden [&_button]:inline-flex [&_button]:h-10 [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-2 [&_button]:rounded-[10px] [&_button]:border [&_button]:border-transparent [&_button]:bg-transparent [&_button]:px-3.5 [&_button]:text-[13px] [&_button]:font-[570] [&_button]:text-muted-foreground [&_button]:transition-all [&_button]:duration-150 [&_button:hover]:bg-accent [&_button:hover]:text-foreground max-[1100px]:[&_button:nth-child(3)]:hidden" aria-label="Workspace navigation")
     Button(size="sm" variant='default'l className='rounded-full!')
       span.font-normal.text-base Files
     button(type="button")
@@ -61,8 +70,8 @@ header(
       Icon(name="sparkles")
       span.font-normal.text-base Automations
 
-  label(className="flex h-10 items-center gap-[9px] rounded-[10px] border border-transparent bg-surface px-3 text-muted-foreground shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:hidden focus-within:border-brand/40 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--brand)_8%,transparent)] [&_kbd]:rounded-[5px] [&_kbd]:border [&_kbd]:border-sidebar-border [&_kbd]:bg-background [&_kbd]:px-1.5 [&_kbd]:py-0.5 [&_kbd]:font-sans [&_kbd]:text-[9.5px] [&_kbd]:text-muted-foreground max-[820px]:dark:flex max-[820px]:[&_kbd]:hidden")
-    Icon(name="search")
+  label(className="hidden md:flex h-10 items-center gap-2 rounded-sm border border-transparent bg-surface px-3 text-muted-foreground shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:hidden focus-within:border-brand/40 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--brand)_8%,transparent)] [&_kbd]:rounded-[5px] [&_kbd]:border [&_kbd]:border-sidebar-border [&_kbd]:bg-background [&_kbd]:px-1.5 [&_kbd]:py-0.5 [&_kbd]:font-sans [&_kbd]:text-[9.5px] [&_kbd]:text-muted-foreground max-[820px]:[&_kbd]:hidden")
+    Icon(name="search" size={12})
     input(
       ~ className="min-w-0 flex-1 border-0 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-muted-foreground"
       ~ ref={searchInputRef}
@@ -74,36 +83,20 @@ header(
       ~ )
     kbd ⌘ K
 
-  div(className="w-full flex items-center justify-end gap-3")
+  div(className="w-full flex items-center justify-end gap-4 px-2 sm:px-0")
+    Button(variant={theme === 'dark' ? 'dark' : ''} className="rounded-full aspect-square" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
+      Icon(name="new-folder" className="text-muted-foreground group-hover:text-foreground")
+    Button(variant={theme === 'dark' ? 'dark' : ''} className="rounded-full aspect-square" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
+      Icon(name="theme" className="text-muted-foreground group-hover:text-foreground")
+    Button(
+      ~ variant={theme === 'dark' ? 'dark' : ''}
+      ~ type="button"
+      ~ title="user"
+      ~ onClick={() => void handleAuthClick()}
+      ~ className="rounded-full aspect-square"
+      ~ )
+      Icon(name={isAuthLoading ? "spinner-shuffle" : "person"} className="text-muted-foreground group-hover:text-foreground")
 
-    // span(className="inline-flex items-center gap-[7px] whitespace-nowrap text-[11px] text-muted-foreground max-[1320px]:hidden")
-    //   span(className="size-[7px] rounded-full bg-positive shadow-[0_0_0_3px_color-mix(in_oklab,var(--positive)_18%,transparent)]")
-    //   | Private OCR
-    Button(variant='' className="rounded-full aspect-square" type="button" onClick={toggleTheme} aria-label="Toggle color theme" title="Toggle light or dark mode")
-      Icon(name="theme" className="text-muted-foreground")
-    if isAuthLoading
-      Button(
-        ~ size="sm"
-        ~ variant="dark"
-        ~ type="button"
-        ~ icon="spinner-shuffle"
-        ~ disabled
-        ~ className="min-w-[120px]"
-        ~ aria-label="Loading authentication"
-        ~ title="Loading authentication"
-        ~ )
-    else
-      Button(
-        ~ size="sm"
-        ~ variant="dark"
-        ~ type="button"
-        ~ icon="person"
-        ~ label={currentUser ? 'Sign out' : 'Sign in'}
-        ~ onClick={() => void handleAuthClick()}
-        ~ className="min-w-[120px]"
-        ~ aria-label={currentUser ? `Sign out ${currentUser.displayName ?? currentUser.email ?? 'current user'}` : 'Sign in'}
-        ~ title={currentUser ? `Signed in as ${currentUser.displayName ?? currentUser.email ?? 'Google user'}` : 'Sign in'}
-        ~ )
     if authError
       p(className="absolute right-4 top-[calc(100%+8px)] z-50 m-0 max-w-sm rounded-lg border border-destructive/20 bg-surface px-3 py-2 text-[10px] text-destructive shadow-lg" role="alert") #{authError}
     // button(className="relative grid size-[38px] cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground max-[820px]:hidden" type="button" aria-label="Notifications")
