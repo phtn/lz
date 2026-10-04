@@ -7,98 +7,77 @@ module
     retryItem: (id: string) => void;
     isOpen: boolean;
     onClose: () => void;
+    onOpen: () => void;
+    onView: (id: string) => void;
+    onClear: () => void;
   }
-
 import { STATUS_COPY } from '@/constants/meta'
 import type { QueueItem } from '@/types/file'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
-import {Icon} from '@/lib/icons'
-
-props { queue, activeQueueCount, removeItem, retryItem, isOpen, onClose }: QueueProps
+import { Icon } from '@/lib/icons'
+props { queue, activeQueueCount, removeItem, retryItem, isOpen, onClose, onOpen, onView, onClear }: QueueProps
 setup
-  const errorCount = queue.filter((item) => item.status === 'error').length;
-  const activeItem = queue.find((item) => item.status !== 'queued' && item.status !== 'error' && item.status !== 'done');
-  const primaryItem = activeItem ?? queue.find((item) => item.status === 'error') ?? queue[0] ?? null;
-  const secondaryItem = primaryItem ? queue.find((item) => item.id !== primaryItem.id) : undefined;
-  const visibleItems = primaryItem ? (secondaryItem ? [primaryItem, secondaryItem] : [primaryItem]) : [];
-  const statusCopy = activeQueueCount > 0
-    ? `${queue.length} file${queue.length === 1 ? '' : 's'} in queue`
-    : errorCount > 0
-      ? `${errorCount} need${errorCount === 1 ? 's' : ''} attention`
-      : 'Finishing upload';
+  const done = queue.filter((item) => item.status === 'done').length;
+  const errors = queue.filter((item) => item.status === 'error').length;
+  const summary = queue.length === 0 ? 'No uploads in this session' : activeQueueCount ? `${activeQueueCount} in progress · ${done} filed` : errors ? `${done} filed · ${errors} need attention` : `${done} ${done === 1 ? 'file' : 'files'} sorted & ready to view`;
 
-if queue.length > 0
-  section(
-    ~ className={[
-    ~   'invisible fixed bottom-[18px] left-[255px] right-[340px] z-[70] mx-auto max-w-[720px] translate-y-[calc(100%+36px)] rounded-2xl border border-sidebar-border bg-surface/95 px-[13px] pb-[13px] pt-2 opacity-0 shadow-[0_22px_60px_rgba(24,30,55,0.2)] backdrop-blur-[18px] transition-[transform,opacity,visibility] [transition-duration:280ms,180ms,0s] [transition-delay:0s,0s,280ms] ease-[cubic-bezier(0.22,1,0.36,1)] dark:rounded-none dark:border-[#0b0b0b] dark:bg-[#2c2c2c]/95 dark:shadow-[inset_0_1px_0_#454545,0_18px_50px_#111] max-[1320px]:left-[235px] max-[1320px]:right-[312px] max-[1100px]:left-[235px] max-[1100px]:right-5 max-[820px]:bottom-3 max-[820px]:left-3 max-[820px]:right-3',
-    ~   isOpen && 'visible translate-y-0 opacity-100 [transition-delay:0s]'
-    ~ ]}
-    ~ aria-labelledby="queue-title"
-    ~ aria-hidden={!isOpen}
-    ~ aria-live="polite"
-    ~ inert={!isOpen}
-    ~ )
-    div(className="mx-auto mb-[5px] h-1 w-9 rounded-full bg-muted" aria-hidden="true")
-    div(className="mx-0.5 mb-2.5 flex items-center justify-between gap-[18px]")
+if isOpen
+  section.queue-panel(aria-labelledby="queue-title")
+    header.queue-header
+      span.queue-indicator(className={activeQueueCount ? 'is-live' : errors ? 'has-error' : 'is-done'})
+        Icon(name={activeQueueCount ? 'upload' : errors ? 'alert-fill' : 'check'} size={21})
       div
-        span(className="mb-[3px] block text-[8px] font-[720] uppercase tracking-[0.09em] text-brand") #{errorCount > 0 ? 'Needs attention' : 'Live processing'}
-        h2#queue-title(className="m-0 text-sm tracking-[-0.025em]") Upload queue
-      div(className="flex items-center gap-2.5 text-[9.5px] text-muted-foreground max-[620px]:[&>span]:hidden")
-        span #{statusCopy}
-        button(className="grid size-7 cursor-pointer place-items-center rounded-lg border-0 bg-muted p-0 text-muted-foreground" type="button" onClick={onClose} aria-label="Hide upload queue")
-          Icon(name="chevron-down" size={18})
-
-    div(className={['grid isolate', visibleItems.length > 1 && 'pt-[9px]']})
-      each item, index in visibleItems key item.id
-        article(
-          ~ className={[
-          ~   'relative z-[2] col-start-1 row-start-1 flex min-h-[75px] items-center gap-[11px] rounded-[11px] border border-sidebar-border bg-surface px-3 py-[11px] shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:rounded-none dark:border-[#111] dark:bg-[#303030] dark:shadow-[inset_0_1px_0_#454545] max-[620px]:gap-[9px] max-[620px]:p-2.5',
-          ~   index === 1 && 'pointer-events-none z-[1] -translate-y-[9px] scale-[0.97] opacity-70'
-          ~ ]}
-          ~ aria-hidden={index === 1}
-          ~ inert={index === 1}
-          ~ )
-          div(className="grid size-[43px] shrink-0 place-items-center overflow-hidden rounded-[10px] bg-brand-soft text-brand [&>div]:flex [&_img]:size-full [&_img]:object-cover")
+        h2#queue-title #{queue.length === 0 ? 'Your upload activity' : activeQueueCount ? 'Your files are on their way' : errors ? 'Let’s finish filing' : 'All filed. All ready.'}
+        p(role="status" aria-live="polite" aria-atomic="true") #{summary}
+      button.icon-button(type="button" onClick={onClose} aria-label="Minimize upload activity")
+        Icon(name="chevron-down" size={20})
+    div.queue-items
+      if queue.length === 0
+        p.queue-empty Add a file to get started. Its progress and completion will appear here.
+      each item in queue key item.id
+        article.queue-item(className={item.status === 'done' ? 'is-done' : item.status === 'error' ? 'has-error' : ''})
+          div.queue-thumbnail
             if item.previewUrl
-              img(src={item.previewUrl} alt="" width={24} height={24})
+              img(src={item.previewUrl} alt="" decoding="async" loading="lazy")
             else
-              Icon(name={getFileIcon(item.file.name, item.file.type)})
-          div.min-w-0.flex-1
-            div(className="flex items-center gap-2 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-1")
-              strong(className="max-w-[430px] overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] text-foreground" title={item.file.name}) #{item.file.name}
+              Icon(name={getFileIcon(item.file.name, item.file.type)} size={23})
+          div.queue-item-content
+            strong(title={item.file.name}) #{item.file.name}
+            div.queue-item-status
+              span #{item.status === 'reading' || item.status === 'filing' ? item.detail ?? STATUS_COPY[item.status] : STATUS_COPY[item.status]}
               if item.classification
                 CategoryPill(category={item.classification.category})
-            div(className="mt-1.5 flex flex-wrap items-center gap-[5px] text-[8.75px] text-muted-foreground")
-              span #{formatBytes(item.file.size)}
-              span •
-              span #{STATUS_COPY[item.status]}
-              if item.classification
-                fragment
-                  span •
-                  span #{item.classification.confidence}% match
+            if item.status !== 'done' && item.status !== 'error'
+              div.queue-progress
+                div.progress-track(role="progressbar" aria-label={`${item.file.name}: ${STATUS_COPY[item.status]}`} aria-valuenow={Math.round(item.progress)} aria-valuemin={0} aria-valuemax={100})
+                  span(className={item.status === 'filing' ? 'is-filing' : ''} style={{ width: `${item.progress}%` }})
+                div.transfer-meta
+                  span #{item.status === 'uploading' ? `${formatBytes(item.uploadedBytes ?? 0)} / ${formatBytes(item.totalBytes ?? item.file.size)}` : formatBytes(item.file.size)}
+                  if item.status === 'uploading' && item.bytesPerSecond
+                    span #{formatBytes(item.bytesPerSecond)}/s
+                  span #{Math.round(item.progress)}%
             if item.error
-              p(className="mb-0 mt-[5px] text-[8.75px] text-destructive") #{item.error}
-            div(className="mt-2 h-[3px] overflow-hidden rounded-full bg-muted" aria-hidden="true")
-              span(
-                ~ className={['block h-full rounded-[inherit] bg-brand transition-[width] duration-200', item.status === 'error' && '!bg-destructive']}
-                ~ style={{ width: `${item.status === 'error' ? 100 : item.progress}%` }}
-                ~ )
-          div(className="grid size-[26px] shrink-0 place-items-center rounded-full bg-success/15 text-positive max-[620px]:hidden [&>div]:flex" aria-label={STATUS_COPY[item.status]})
-            if item.status === 'done'
-              Icon(name="check" size={18})
-            elseif item.status === 'error'
-              Icon(name="alert-fill" size={18})
-            else
-              Icon(name="spinner-ring")
-          if item.status === 'error'
-            button(className="grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-brand-soft hover:text-brand" type="button" onClick={() => retryItem(item.id)} aria-label={`Retry ${item.file.name}`})
-              Icon(name="refresh" size={16})
-          if item.status === 'queued' || item.status === 'done' || item.status === 'error'
-            button(
-              ~ className="grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-brand-soft hover:text-brand"
-              ~ type="button"
-              ~ onClick={() => removeItem(item.id)}
-              ~ aria-label={`Remove ${item.file.name} from queue`}
-              ~ )
-              Icon(name="close" size={17})
+              p.queue-error(role="alert") #{item.error}
+            if item.status === 'done' && item.storedFile?.jev && ['review', 'unavailable', 'skipped'].includes(item.storedFile.jev.status)
+              p.queue-warning Saved & ready to view. Review the folder classification.
+            if item.status === 'done' && item.classification?.warning
+              p.queue-warning #{item.classification.warning}
+          div.queue-item-actions
+            if item.status === 'done' && item.storedFile
+              button.button-secondary(type="button" onClick={() => onView(item.storedFile!.id)}) View
+            if item.status === 'error'
+              button.button-secondary(type="button" onClick={() => retryItem(item.id)} aria-label={`Retry ${item.file.name}`}) Retry
+            if item.status === 'queued' || item.status === 'error' || item.status === 'done'
+              button.icon-button(type="button" onClick={() => removeItem(item.id)} aria-label={`Dismiss ${item.file.name}`})
+                Icon(name="close" size={16})
+    footer.queue-footer
+      Icon(name="shield-check" size={15})
+      span #{activeQueueCount ? 'Keep this tab open while we file your originals.' : 'Saved originals are available when you sign in on another device.'}
+      if done > 0
+        button.text-button(type="button" onClick={onClear}) Clear completed
+else
+  button.queue-dock(type="button" onClick={onOpen})
+    Icon(name={activeQueueCount ? 'upload' : errors ? 'alert-fill' : 'check'} size={20})
+    span #{summary}
+    Icon(name="chevron-down" className="rotate-180" size={17})

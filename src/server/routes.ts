@@ -1,7 +1,8 @@
 import type { Context } from '@octanejs/rsbuild-plugin'
 import { api } from '../../convex/_generated/api'
-import { CATEGORY_NAMES, categoryFromFileType } from '@/constants/meta'
-import type { CategoryName, StoredFile } from '@/types/file'
+import { CATEGORY_NAMES, MAX_FILE_SIZE, categoryFromFileType } from '@/constants/meta'
+import type { StoredFile } from '@/types/file'
+import { classifyWithJev } from './jev'
 import { authenticateRequest, RequestError } from './convex'
 import {
   createObjectKey,
@@ -14,8 +15,6 @@ import {
   type AppPlatform,
   type FileRecord
 } from './storage'
-
-const MAX_FILE_SIZE = 20 * 1024 * 1024
 
 function json(body: unknown, status = 200) {
   return Response.json(body, {
@@ -49,35 +48,32 @@ async function toStoredFile(platform: AppPlatform, record: FileRecord): Promise<
     kind: record.kind,
     confidence: record.confidence,
     excerpt: record.excerpt,
+    method: record.method,
+    text: record.text,
+    ocrConfidence: record.ocrConfidence,
+    pagesRead: record.pagesRead,
+    pageCount: record.pageCount,
+    warning: record.warning,
+    jev: record.jev,
     createdAt: new Date(record.createdAt).toISOString(),
-    url: await createStoredFileUrl(platform, record)
+    url: await createStoredFileUrl(platform, record),
+    thumbnailUrl: record.thumbnailKey ? await createStoredFileUrl(platform, { ...record, objectKey: record.thumbnailKey }) : undefined
   }
 }
 
-function fromIndexedFile(record: {
-  externalId: string
-  name: string
-  size: number
-  mimeType: string
-  category: Exclude<CategoryName, 'All'>
-  kind: string
-  confidence: number
-  excerpt: string
-  objectKey: string
-  createdAt: number
-}): FileRecord {
-  return {
-    id: record.externalId,
-    name: record.name,
-    size: record.size,
-    mimeType: record.mimeType,
-    category: record.category,
-    kind: record.kind,
-    confidence: record.confidence,
-    excerpt: record.excerpt,
-    objectKey: record.objectKey,
-    createdAt: record.createdAt
+function fromIndexedFile(record: Omit<FileRecord, 'id'> & { externalId: string; ownerId: string }): FileRecord {
+  if (record.objectKey !== createObjectKey(record.ownerId, record.externalId) ||
+    (record.thumbnailKey !== undefined && record.thumbnailKey !== `drop/${record.ownerId}/thumbnails/${record.externalId}`)) {
+    throw new RequestError(403, 'This file has invalid storage metadata.')
   }
+  return { ...record, id: record.externalId }
+}
+
+function optionalNumber(form: FormData, name: string, max: number) {
+  const value = form.get(name)
+  if (typeof value !== 'string') return undefined
+  const number = Number(value)
+  return Number.isFinite(number) ? Math.max(0, Math.min(max, Math.round(number))) : undefined
 }
 
 async function uploadFile(platform: AppPlatform, request: Request) {
@@ -92,7 +88,10 @@ async function uploadFile(platform: AppPlatform, request: Request) {
   const fallbackCategory = categoryFromFileType(candidate.name, candidate.type)
   const requestedCategory = cleanText(formData.get('category'), fallbackCategory, 40)
   const category = CATEGORY_NAMES.find((candidate) => candidate === requestedCategory) ?? fallbackCategory
-  const uploadId = crypto.randomUUID()
+  const requestedId = formData.get('uploadId')
+  const uploadId = typeof requestedId === 'string' && /^[a-f0-9-]{36}$/i.test(requestedId) ? requestedId : crypto.randomUUID()
+  const existing = await client.query(api.files.getByExternalId, { externalId: uploadId })
+  if (existing) return json({ file: await toStoredFile(platform, fromIndexedFile(existing)) })
   const record: FileRecord = {
     id: uploadId,
     name: cleanFilename(candidate.name),
@@ -102,14 +101,31 @@ async function uploadFile(platform: AppPlatform, request: Request) {
     kind: cleanText(formData.get('kind'), 'File', 80),
     confidence: Math.max(0, Math.min(100, Number(cleanText(formData.get('confidence'), '0', 3)) || 0)),
     excerpt: cleanText(formData.get('excerpt'), '', 300),
+    method: cleanText(formData.get('method'), 'File type + filename', 100),
+    text: typeof formData.get('text') === 'string' ? String(formData.get('text')).replace(/\u0000/g, '').slice(0, 60000) : undefined,
+    ocrConfidence: optionalNumber(formData, 'ocrConfidence', 100),
+    pagesRead: optionalNumber(formData, 'pagesRead', 10000),
+    pageCount: optionalNumber(formData, 'pageCount', 10000),
+    warning: cleanText(formData.get('warning'), '', 300),
     objectKey: createObjectKey(userId, uploadId),
     createdAt: Date.now()
   }
 
+  await classifyWithJev(record, platform.env.TYPESAFE_API_KEY, request.signal)
+  const stored = await toStoredFile(platform, record)
   await uploadStoredFile(platform, record, new Uint8Array(await candidate.arrayBuffer()))
 
+  const thumbnail = formData.get('thumbnail')
+  if (thumbnail instanceof File && thumbnail.size > 0 && thumbnail.size <= 512 * 1024 && ['image/webp', 'image/jpeg', 'image/png'].includes(thumbnail.type)) {
+    const key = `drop/${userId}/thumbnails/${uploadId}`
+    try {
+      await uploadStoredFile(platform, { ...record, objectKey: key, mimeType: thumbnail.type }, new Uint8Array(await thumbnail.arrayBuffer()))
+      record.thumbnailKey = key
+      stored.thumbnailUrl = await createStoredFileUrl(platform, { ...record, objectKey: key })
+    } catch { /* The complete original remains usable when a thumbnail cannot be saved. */ }
+  }
   try {
-    const indexed = await client.mutation(api.files.create, {
+    await client.mutation(api.files.create, {
       externalId: record.id,
       name: record.name,
       size: record.size,
@@ -118,12 +134,21 @@ async function uploadFile(platform: AppPlatform, request: Request) {
       kind: record.kind,
       confidence: record.confidence,
       excerpt: record.excerpt,
+      method: record.method,
+      text: record.text,
+      ocrConfidence: record.ocrConfidence,
+      pagesRead: record.pagesRead,
+      pageCount: record.pageCount,
+      warning: record.warning,
+      jev: record.jev,
       objectKey: record.objectKey,
+      thumbnailKey: record.thumbnailKey,
       createdAt: record.createdAt
     })
-    return json({ file: await toStoredFile(platform, fromIndexedFile(indexed)) }, 201)
+    return json({ file: stored }, 201)
   } catch (error) {
     await deleteStoredFile(platform, record.objectKey).catch(() => {})
+    if (record.thumbnailKey) await deleteStoredFile(platform, record.thumbnailKey).catch(() => {})
     throw error
   }
 }
@@ -135,7 +160,8 @@ export async function handleFiles(context: Context) {
 
     if (context.request.method === 'GET') {
       const { client } = await authenticateRequest(context.request, platform.env.CONVEX_URL)
-      const indexed = await client.query(api.files.list, { limit: 200 })
+      const search = new URL(context.request.url).searchParams.get('search')?.trim()
+      const indexed = search ? await client.query(api.files.search, { search: search.slice(0, 200) }) : await client.query(api.files.list, { limit: 200 })
       const files = await Promise.all(
         indexed.map((file) => toStoredFile(platform, fromIndexedFile(file)))
       )
@@ -154,8 +180,21 @@ export async function handleFileById(context: Context) {
     const platform = requirePlatform(context.platform)
     const externalId = context.params.id
 
-    if (context.request.method === 'GET') {
+    if (context.request.method === 'GET' && new URL(context.request.url).searchParams.get('metadata') !== '1') {
       return await serveStoredFile(platform, externalId, context.request)
+    }
+    if (context.request.method === 'GET' || context.request.method === 'PATCH') {
+      const { client } = await authenticateRequest(context.request, platform.env.CONVEX_URL)
+      let indexed = await client.query(api.files.getByExternalId, { externalId })
+      if (!indexed) return json({ error: 'File not found.' }, 404)
+      if (context.request.method === 'PATCH') {
+        const body: unknown = await context.request.json().catch(() => null)
+        const category = body && typeof body === 'object' && 'category' in body ? body.category : null
+        const validCategory = CATEGORY_NAMES.find((item) => item === category)
+        if (!validCategory) return json({ error: 'Choose a valid folder.' }, 400)
+        indexed = await client.mutation(api.files.reclassify, { externalId, category: validCategory })
+      }
+      return json({ file: await toStoredFile(platform, fromIndexedFile(indexed)) })
     }
 
     if (context.request.method === 'DELETE') {
@@ -163,6 +202,7 @@ export async function handleFileById(context: Context) {
       const indexed = await client.query(api.files.getByExternalId, { externalId })
       if (!indexed) return json({ error: 'File not found.' }, 404)
       await deleteStoredFile(platform, indexed.objectKey)
+      if (indexed.thumbnailKey) await deleteStoredFile(platform, indexed.thumbnailKey)
       await client.mutation(api.files.remove, { externalId })
       return json({ ok: true })
     }

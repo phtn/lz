@@ -1,4 +1,4 @@
-export type QueueStatus = 'queued' | 'reading' | 'classifying' | 'uploading' | 'done' | 'error'
+export type QueueStatus = 'queued' | 'reading' | 'classifying' | 'uploading' | 'filing' | 'done' | 'error'
 
 export type CategoryName =
   | 'Receipts'
@@ -19,7 +19,31 @@ export type CategoryName =
   | 'Archives'
   | 'Media'
   | 'Code'
+  | 'Invoices'
+  | 'Taxes'
+  | 'Banking'
+  | 'Employment'
+  | 'Property'
+  | 'Research'
+  | 'Design'
+  | 'Emails'
+  | 'Audio'
+  | 'Video'
   | 'All'
+
+export type JevAssessment = {
+  status: 'accepted' | 'review' | 'unavailable' | 'skipped' | 'corrected'
+  policyVersion: string
+  reason: string
+  model?: string
+  suggestedCategory?: Exclude<CategoryName, 'All'> | 'Unknown'
+  confidence?: number
+  probability?: number
+  margin?: number
+  evidenceProbability?: number
+  probabilities?: Record<string, number>
+  reviewedAt?: number
+}
 
 export type Classification = {
   category: CategoryName
@@ -27,6 +51,12 @@ export type Classification = {
   confidence: number
   excerpt: string
   method: string
+  text?: string
+  ocrConfidence?: number
+  pagesRead?: number
+  pageCount?: number
+  warning?: string
+  jev?: JevAssessment
 }
 
 export type QueueItem = {
@@ -37,6 +67,13 @@ export type QueueItem = {
   previewUrl?: string
   classification?: Classification
   error?: string
+  detail?: string
+  uploadedBytes?: number
+  totalBytes?: number
+  bytesPerSecond?: number
+  storedFile?: StoredFile
+  language?: string
+  ownerUid: string
 }
 
 export type StoredFile = {
@@ -50,6 +87,14 @@ export type StoredFile = {
   excerpt: string
   createdAt: string
   url: string
+  thumbnailUrl?: string
+  method?: string
+  text?: string
+  ocrConfidence?: number
+  pagesRead?: number
+  pageCount?: number
+  warning?: string
+  jev?: JevAssessment
 }
 
 export type CategoryRule = {

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .beast/
+.octane/
 .dropwell-data/
 *.tsbuildinfo
 .env
@@ -10,3 +11,6 @@ dist/
 .dev.vars.*
 .wrangler/
 .DS_Store
+
+test-results/
+playwright-report/

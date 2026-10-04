@@ -1,22 +1,13 @@
-import { ClassName } from '@/types'
-import { IconNameType } from './icons'
-
-export type IconList = Record<IconNameType, { viewBox: string; symbol: string }>
-
-export type IconName = IconNameType
+import type { ClassValue } from 'octane'
+import type { IconName } from './icons'
 
 export interface IconProps {
   name: IconName
-  className?: ClassName
+  /** Width and height in pixels. A size class such as `size-5` overrides it. */
   size?: number
+  className?: ClassValue
+  /** Any CSS color. Without it the icon takes the surrounding text color. */
   color?: string
-  solid?: boolean
-  onClick?: VoidFunction
-  svgStyle?: ClassName
-}
-
-export interface IconData {
-  symbol: string
-  set: string
-  viewBox?: string
+  /** Names an icon that means something on its own. Without it the icon is hidden from screen readers. */
+  label?: string
 }

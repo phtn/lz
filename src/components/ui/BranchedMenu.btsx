@@ -1,0 +1,252 @@
+module "use client";
+import { createElement, useLayoutEffect, useRef, useState, useLinkedState, useId } from "octane";
+import { Icon } from "@/lib/icons";
+import {navGroups, type NavGroup, type NavItem} from '@/lib/navs'
+import { Link } from '@octanejs/tanstack-router';
+import { cn } from '@/lib/utils';
+import FluidTooltip, { FluidTooltipContent, FluidTooltipRoot, FluidTooltipTrigger } from '@/components/ui/FluidTooltip.btsx';
+
+module
+  interface BranchedMenuProps {
+    ~ items?: NavGroup[];
+    ~ isCompact?: boolean;
+    ~ path?: string;
+    ~ defaultOpen?: number | number[];
+    ~ defaultActive?: string;
+    ~ active?: string | number;
+    ~ onSelect?: (value: string | number, item: NavItem | NavGroup) => void;
+    ~ onToggle?: (index: number, open: boolean) => void;
+    ~ onExpand?: VoidFunction;
+    ~ color?: string;
+    ~ accentColor?: string;
+    ~ lineColor?: string;
+    ~ width?: number;
+    ~ rowHeight?: number;
+    ~ indent?: number;
+    ~ trunk?: number;
+    ~ radius?: number;
+    ~ lineWidth?: number;
+    ~ fontSize?: number;
+    ~ drawDuration?: number;
+    ~ foldDuration?: number;
+    ~ className?: string;
+    ~ }
+  const PAD = 6;
+  const MARK = 16;
+  const toSet = (open: number | number[]) => new Set(Array.isArray(open) ? open : open >= 0 ? [open] : []);
+
+component CompactBranchedItem
+  props { item, selected, onSelect }: { item: NavItem; selected: boolean; onSelect: () => void }
+  setup
+    const className = cn('flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-sidebar-border/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', selected && 'bg-sidebar-border/60 text-primary shadow-sm')
+    const link = !item.href
+      ? createElement('button', { type: 'button', className: cn(className, item.className), onClick: onSelect, disabled: item.disabled, 'aria-current': selected ? 'page' : undefined })
+      : item.href.startsWith('http')
+      ? createElement('a', { href: item.href, target: '_blank', rel: 'noopener noreferrer', className: cn(className, item.className), onClick: onSelect, 'aria-disabled': item.disabled || undefined })
+      : createElement(Link, { to: item.href, className: cn(className, item.className), onClick: onSelect, disabled: item.disabled, 'aria-current': selected ? 'page' : undefined })
+  FluidTooltipRoot(id={item.value} side='right' sideOffset={12})
+    FluidTooltipTrigger(render={link})
+      fragment
+        Icon(name={item.icon} size={20})
+        span(className='sr-only') #{item.label}
+    FluidTooltipContent #{item.label}
+
+component ItemContent
+  props { item }: { item: NavItem }
+  if item.icon
+    Icon(name={item.icon} size={18} className="-ml-0.5 -mt-px shrink-0")
+  span(className="min-w-0 flex-1 truncate") #{item.label}
+  if item.count !== undefined
+    small(className="ml-auto shrink-0 pr-1 font-mono text-2xs tabular-nums text-muted-foreground") #{item.count}
+
+component BranchedLeaf
+  props { item, selected, isOpen, onSelect }: { item: NavItem; selected: boolean; isOpen: boolean; onSelect: VoidFunction }
+  setup
+    const className = cn("m-0 box-border flex w-full cursor-pointer items-center gap-1.5 border-0 bg-transparent py-0 pr-0 text-left tracking-tight outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--bm-focus)] [height:var(--bm-row)] [padding-left:var(--bm-indent)] [color:var(--muted-foreground)] [font-family:inherit] [-webkit-tap-highlight-color:transparent] [transition:color_200ms_ease] hover:[color:var(--bm-ink)] disabled:hover:[color:var(--bm-muted)] disabled:opacity-50 font-medium data-[active]:[color:var(--bm-accent)]", item.className);
+    const click = (event: MouseEvent) => {
+      if (item.disabled) { event.preventDefault(); return; }
+      onSelect();
+    };
+  if item.href
+    if item.href.startsWith('http')
+      a(href={item.disabled ? undefined : item.href} target="_blank" rel="noopener noreferrer" className={className} aria-current={selected ? 'page' : undefined} data-active={selected ? '' : undefined} aria-disabled={item.disabled || undefined} tabIndex={isOpen && !item.disabled ? 0 : -1} onClick={click})
+        ItemContent(item={item})
+    else
+      Link(to={item.href} className={className} aria-current={selected ? 'page' : undefined} data-active={selected ? '' : undefined} disabled={item.disabled} tabIndex={isOpen && !item.disabled ? 0 : -1} onClick={click})
+        ItemContent(item={item})
+  else
+    button(type="button" className={className} aria-current={selected ? 'page' : undefined} data-active={selected ? '' : undefined} disabled={item.disabled} tabIndex={isOpen ? 0 : -1} onClick={click})
+      ItemContent(item={item})
+
+props { items = navGroups, isCompact = false, path, defaultOpen = 0, defaultActive, active: controlledActive, onSelect, onToggle, onExpand, color = "currentColor", accentColor = "currentColor", lineColor = "currentColor", width = 240, rowHeight = 32, indent = 40, trunk = 18, radius = 10, lineWidth = 1.5, fontSize = 14, drawDuration = 400, foldDuration = 300, className }: BranchedMenuProps
+setup
+  const [activeValue, setActive] = useState(() => {
+    if (defaultActive)
+      return defaultActive;
+    const first = items.find((it, i) => it.items && toSet(defaultOpen).has(i));
+    return first?.items?.[0]?.value ?? "";
+  });
+  const active = controlledActive ?? activeValue;
+
+  const navRef = useRef<HTMLElement | null>(null);
+  const markerRef = useRef<HTMLSpanElement | null>(null);
+
+  const isActive = (item: NavItem) => path !== undefined ? item.href === path : item.value === active;
+  const activeSection = items.findIndex(it => it.items?.some(isActive));
+  const [open, setOpen] = useLinkedState<string | number, Set<number>>(active, (_active, previous) => {
+    const next = new Set(previous?.value ?? toSet(defaultOpen));
+    if (activeSection >= 0) next.add(activeSection);
+    return next;
+  });
+  const menuId = useId();
+  const markerShown = activeSection >= 0 && open.has(activeSection);
+
+  useLayoutEffect(() => {
+    if (isCompact) return;
+    const place = (glide: boolean) => {
+      const m = markerRef.current;
+      const el = navRef.current?.querySelectorAll<HTMLButtonElement>('[data-bm-group-heading]')[activeSection];
+      if (!m)
+        return;
+      const on = markerShown && el;
+      if (!glide)
+        m.style.transition = "none";
+      if (on)
+        m.style.top = `${el.offsetTop + (el.offsetHeight - MARK) / 2}px`;
+      m.toggleAttribute("data-on", Boolean(on));
+      if (!glide) {
+        void m.offsetHeight;
+        m.style.transition = "";
+      }
+    };
+    place(true);
+    let first = true;
+    const ro = new ResizeObserver(() => {
+      if (first) {
+        first = false;
+        return;
+      }
+      place(false);
+    });
+    if (navRef.current)
+      ro.observe(navRef.current);
+    return () => ro.disconnect();
+  });
+
+  const select = (value: string, item: NavItem | NavGroup ) => {
+    setActive(value);
+    onSelect?.(value, item);
+  };
+
+  const toggle = (i: number) => {
+    const isOpen = !open.has(i);
+    setOpen(prev => {
+      const next = new Set(prev);
+      if (!next.has(i))
+        next.add(i);
+      else
+        next.delete(i);
+      return next;
+    });
+    onToggle?.(i, isOpen);
+  };
+
+  const expandGroup = (i: number) => {
+    setOpen(previous => new Set(previous).add(i));
+    onExpand?.();
+    requestAnimationFrame(() => {
+      navRef.current?.querySelectorAll<HTMLButtonElement>('[data-bm-group-heading]')[i]?.focus({ preventScroll: true });
+    });
+  };
+
+  const r = Math.min(radius, rowHeight / 2 - 2);
+  const endX = indent - 8;
+  const rowY = (k: number) => PAD + k * rowHeight + rowHeight / 2;
+  const branch = (k: number) => `M ${trunk} ${rowY(k) - r} A ${r} ${r} 0 0 0 ${trunk + r} ${rowY(k)} H ${endX}`;
+  const reach = (k: number) => `M ${trunk} 0 V ${rowY(k) - r} A ${r} ${r} 0 0 0 ${trunk + r} ${rowY(k)} H ${endX}`;
+  const length = (k: number) => rowY(k) - r + (Math.PI * r) / 2 + (endX - trunk - r);
+if isCompact
+  FluidTooltip(orientation='vertical')
+    nav(className={cn('flex w-full flex-col items-center gap-1', className)} aria-label='Workspace navigation')
+      each group, i in items key group.title
+        div(className='flex flex-col items-center gap-1' role='group' aria-label={group.title})
+          if i === 1
+            div(className='mb-2 h-px w-6 bg-sidebar-border' aria-hidden='true')
+          if group.icon
+            CompactBranchedItem(item={{ value: group.title, label: group.title, icon: group.icon, tags: [], className: 'sidebar-branch' }} selected={activeSection === i} onSelect={() => expandGroup(i)})
+          else
+            each item in group.items key item.value
+              CompactBranchedItem(item={item} selected={isActive(item)} onSelect={() => { if (!item.disabled) select(item.value, item); }})
+else
+  nav(
+    ~ ref={navRef}
+    ~ aria-label="Workspace navigation"
+    ~ className={`relative flex w-full max-w-[min(var(--bm-w),100%)] flex-col pl-3.5 leading-[1.3] [color:var(--bm-ink)] [font-family:inherit] [font-size:var(--bm-font)] before:absolute before:top-2 before:bottom-0 before:left-0 before:w-0.5 before:rounded-[1px] before:[background:linear-gradient(to_bottom,var(--bm-line)_0%,var(--bm-line)_50%,transparent_100%)] before:content-['']${className ? ` ${className}` : ""}`}
+    ~ style={{
+    ~ "--bm-w": `${width}px`,
+    ~ "--bm-ink": color,
+    ~ "--bm-accent": accentColor,
+    ~ "--bm-focus": 'var(--focus)',
+    ~ "--bm-line": lineColor,
+    ~ "--bm-font": `${fontSize}px`,
+    ~ "--bm-row": `${rowHeight}px`,
+    ~ "--bm-indent": `${indent}px`,
+    ~ "--bm-line-w": lineWidth,
+    ~ "--bm-draw": `${drawDuration}ms`,
+    ~ "--bm-muted": `color-mix(in srgb, ${color} 50%, transparent)`,
+    ~ "--bm-fold": `${foldDuration}ms`
+    ~ }}
+    ~ )
+    span(
+      ~ className={cn("absolute top-px left-0 z-[1] h-4.25 w-0.5 rounded-[1px] opacity-20 [background:var(--bm-accent)] [transition:top_220ms_cubic-bezier(0.23,1,0.32,1),opacity_150ms_ease] data-[on]:opacity-100 motion-reduce:[transition:opacity_150ms_ease] pointer-events-none select-none", {'opacity-100': markerShown})}
+      ~ ref={markerRef}
+      ~ aria-hidden="true"
+      ~ )
+    each item, i in items key item.title
+      div(className="group/section flex flex-col" data-open={item.items && open.has(i) ? "" : undefined})
+        button(
+          ~ className=" flex items-center cursor-pointer border-0 text-muted-foreground bg-transparent gap-2 -ms-2.25 ps-2 py-1.5 text-left font-medium tracking-tight outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--bm-focus)] [color:var(--bm-muted)] [font-family:inherit] [font-size:calc(var(--bm-font)+1px)] [-webkit-tap-highlight-color:transparent] [transition:color_200ms_ease] group-data-[open]/section:[color:var(--bm-ink)] data-[active]:[color:var(--bm-ink)] hover:[color:var(--bm-ink)] select-none"
+          ~ data-bm-group-heading=""
+          ~ type="button"
+          ~ aria-controls={`${menuId}-group-${i}`}
+          ~ aria-expanded={item.items ? open.has(i) : undefined}
+          ~ aria-current={!item.items && (item.title ?? item.label) === active ? "true" : undefined}
+          ~ data-active={!item.items && (item.title ?? item.label) === active ? "" : undefined}
+          ~ onClick={() => (item.items ? toggle(i) : select(item.title ?? item.label, item))}
+          ~ )
+          span(className="min-w-0 flex-1") #{item.title}
+          if item.count !== undefined
+            small(className="ml-auto shrink-0 pr-1 font-mono text-2xs tabular-nums text-muted-foreground") #{item.count}
+          Icon(name="chevron-down" size={12} className={cn('shrink-0 opacity-50 transition-transform duration-200 motion-reduce:transition-none', !open.has(i) && '-rotate-90')})
+
+        if item.items
+          div(className="grid [grid-template-rows:0fr] [transition:grid-template-rows_var(--bm-fold)_cubic-bezier(0.23,1,0.32,1)] group-data-[open]/section:[grid-template-rows:1fr] motion-reduce:transition-none" id={`${menuId}-group-${i}`} aria-hidden={!open.has(i)} inert={!open.has(i)})
+            div(className="min-h-0 overflow-hidden")
+              div(className="relative px-1 box-border py-1.5" style={{ height: PAD * 2 + item.items.length * rowHeight }})
+                svg(
+                  ~ className="pointer-events-none absolute top-0 left-0 overflow-visible opacity-0 [transition:opacity_200ms_ease] group-data-[open]/section:opacity-100 group-data-[open]/section:[transition:opacity_250ms_ease_100ms]"
+                  ~ width={indent}
+                  ~ height={PAD * 2 + item.items.length * rowHeight}
+                  ~ aria-hidden="true"
+                  ~ )
+                  if item.items.length > 0
+                    path(
+                      ~ className="fill-none [stroke:var(--bm-line)] [stroke-width:var(--bm-line-w)] [stroke-linecap:round] [stroke-linejoin:round]"
+                      ~ d={`M ${trunk} 0 V ${rowY(item.items.length - 1) - r}`}
+                      ~ )
+                  each kid, k in item.items key kid.value
+                    path(
+                      ~ className="fill-none [stroke:var(--bm-line)] [stroke-width:var(--bm-line-w)] [stroke-linecap:round] [stroke-linejoin:round]"
+                      ~ d={branch(k)}
+                      ~ )
+                  each kid, k in item.items key kid.value
+                    path(
+                      ~ className="fill-none [stroke:var(--bm-accent)] [stroke-width:var(--bm-line-w)] [stroke-linecap:round] [stroke-linejoin:round] [transition:stroke-dashoffset_var(--bm-draw)_cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+                      ~ d={reach(k)}
+                      ~ style={{
+                      ~ strokeDasharray: length(k),
+                      ~ strokeDashoffset: isActive(kid) ? 0 : length(k)
+                      ~ }}
+                      ~ )
+                each kid in item.items key kid.value
+                  BranchedLeaf(item={kid} selected={isActive(kid)} isOpen={open.has(i)} onSelect={() => select(kid.value, kid)})

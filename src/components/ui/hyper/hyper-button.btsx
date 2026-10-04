@@ -18,4 +18,4 @@ button(
   ~ 'dark:active:shadow-[inset_0.25px_0.5px_0px_#333,inset_0_0_0.5px_#393939,inset_0_0.25px_0_#575757,0_1px_0.5px_#3c3c3c] active:[&>*]:scale-80 active:[&>*]:opacity-70 transition-all duration-120 ease-out',
   ~  className)}
   ~onClick={onClick})
-  fragment #{children}
+  | #{children}

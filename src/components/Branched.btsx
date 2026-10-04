@@ -1,0 +1,41 @@
+module "use strong";
+
+import BranchedMenu from './ui/BranchedMenu.btsx'
+import { getFolderCategory, getWorkspaceNavGroups } from '@/lib/navs'
+import type { WorkspaceNavigationProps } from '@/types/layout'
+
+props { activeQueueCount, library, activeCategory, setActiveCategory, categoryCounts, onOpenQueue, isCompact = false, onNavigate, onExpand }: WorkspaceNavigationProps & { isCompact?: boolean; onNavigate?: VoidFunction; onExpand?: VoidFunction }
+setup
+  const items = getWorkspaceNavGroups(categoryCounts, library.length, activeQueueCount);
+  const select = (value: string | number) => {
+    if (value === 'upload-activity') onOpenQueue();
+    else if (value === 'All') setActiveCategory('All');
+    else {
+      const category = getFolderCategory(String(value));
+      if (!category) return;
+      setActiveCategory(category);
+    }
+    onNavigate?.();
+  };
+
+div.sidebar-nav.sidebar-folders.branched-sidebar-nav(data-compact={isCompact || undefined})
+  BranchedMenu(
+    ~ items={items}
+    ~ isCompact={isCompact}
+    ~ active={activeCategory}
+    ~ onSelect={select}
+    ~ onExpand={onExpand}
+    ~ defaultOpen={[0, 1]}
+    ~ color="var(--foreground)"
+    ~ accentColor="var(--accent)"
+    ~ lineColor="var(--line)"
+    ~ width={300}
+    ~ rowHeight={36}
+    ~ indent={24}
+    ~ trunk={4}
+    ~ radius={4}
+    ~ lineWidth={1.5}
+    ~ fontSize={14}
+    ~ drawDuration={400}
+    ~ foldDuration={280}
+    ~ )

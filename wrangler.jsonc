@@ -11,7 +11,7 @@
   "r2_buckets": [
     {
       "binding": "DROPZONE_FILES",
-      "bucket_name": "beast"
+      "bucket_name": "drops"
     }
   ],
   "env": {
@@ -19,7 +19,7 @@
       "r2_buckets": [
         {
           "binding": "DROPZONE_FILES",
-          "bucket_name": "beast",
+          "bucket_name": "drops",
           "remote": true
         }
       ]

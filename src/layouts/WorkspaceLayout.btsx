@@ -1,0 +1,14 @@
+import { useMobile } from '@/hooks/use-mobile'
+import type { WorkspaceLayoutProps } from '@/types/layout'
+import DesktopLayout from './DesktopLayout.btsx'
+import MobileLayout from './MobileLayout.btsx'
+
+props { navigation, topbar, children }: WorkspaceLayoutProps
+setup const isMobile = useMobile();
+
+if isMobile
+  MobileLayout(navigation={navigation} topbar={topbar})
+    | #{children}
+else
+  DesktopLayout(navigation={navigation} topbar={topbar})
+    | #{children}

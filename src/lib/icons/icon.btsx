@@ -1,16 +1,26 @@
-import { type IconNameType, icons } from './icons'
-import type { IconProps as BaseIconProps } from './types'
-import { cn } from '../utils'
+module "use strong";
 
-props { name, className, size, color, solid, onClick, svgStyle }: BaseIconProps
+import { trustHTML, useId } from 'octane'
+import { ICON_VIEWBOX, iconMarkup } from '@/lib/icons/icons'
+import type { IconProps } from '@/lib/icons/types'
+
+props { name, size = 20, className, color, label }: IconProps
 
 setup
-  const icon = icons[name as IconNameType]
-  const s = size ?? 16
-  const c = color ?? 'currentColor'
-  const isSolid = solid ?? true
-  const viewBox = String(icon?.viewBox ?? '0 0 16 16')
-  const symbol = icon?.symbol ?? ''
+  const instanceId = useId()
 
-div(className={cn(onClick && 'cursor-pointer active:scale-92 transition-transform duration-200','flex items-center justify-center m-0.75', className)} onClick={onClick})
-  svg(aria-hidden={true} strokeWidth="1" className={cn('shrink-0 my-auto', onClick && 'cursor-pointer', svgStyle)} xmlns="http://www.w3.org/2000/svg" viewBox={viewBox} width={s} height={s} fill={isSolid ? c : 'none'} stroke={isSolid ? 'none' : c} strokeLinejoin="round" strokeLinecap="round" dangerouslySetInnerHTML={{ __html: symbol }} onClick={onClick})
+svg(
+  ~ xmlns="http://www.w3.org/2000/svg"
+  ~ viewBox={ICON_VIEWBOX}
+  ~ width={size}
+  ~ height={size}
+  ~ fill="currentColor"
+  ~ strokeLinecap="round"
+  ~ strokeLinejoin="round"
+  ~ className={[className, name === 'spinner-ring' || name === 'spinner-shuffle' ? 'animate-spin' : undefined]}
+  ~ style={{ flexShrink: 0, color }}
+  ~ role={label ? 'img' : undefined}
+  ~ aria-label={label}
+  ~ aria-hidden={label ? undefined : true}
+  ~ dangerouslySetInnerHTML={trustHTML(iconMarkup(name, instanceId))}
+  ~ )

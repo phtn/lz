@@ -1,0 +1,53 @@
+module "use strong";
+
+import { useEffect, useRef } from 'octane'
+import { Icon } from '@/lib/icons'
+import ThemeToggle from './ThemeToggle.btsx'
+import MobileSidebarNav from './MobileSidebarNav.btsx'
+import type { WorkspaceNavigationProps } from '@/types/layout'
+
+props { open, onOpenChange, navigation }: { open: boolean; onOpenChange: (open: boolean) => void; navigation: WorkspaceNavigationProps }
+setup
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const controls = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')).filter((element) => element.getClientRects().length > 0);
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+      event.preventDefault(); last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first?.focus();
+    }
+  };
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (open && dialog && !dialog.open) dialog.showModal();
+    else if (!open && dialog?.open) dialog.close();
+  });
+  useEffect(() => () => { dialogRef.current?.close(); });
+
+dialog#mobile-navigation.mobile-sidebar(
+  ~ ref={dialogRef}
+  ~ aria-labelledby="mobile-navigation-title"
+  ~ aria-describedby="mobile-navigation-description"
+  ~ onKeyDown={handleKeyDown}
+  ~ onCancel={(event) => { event.preventDefault(); onOpenChange(false); }}
+  ~ onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right) onOpenChange(false); } }}
+  ~ onTouchStart={(event) => { const touch = event.touches[0]; if (touch) touchStartRef.current = { x: touch.clientX, y: touch.clientY }; }}
+  ~ onTouchEnd={(event) => { const touch = event.changedTouches[0]; if (touch && touch.clientX - touchStartRef.current.x > 70 && touch.clientX - touchStartRef.current.x > Math.abs(touch.clientY - touchStartRef.current.y) * 1.5) onOpenChange(false); }}
+  ~ )
+  div.mobile-sidebar-content
+    div.mobile-sidebar-glow(aria-hidden="true")
+    header.mobile-sidebar-header
+      h2#mobile-navigation-title DropZone
+      button.icon-button(type="button" onClick={() => onOpenChange(false)} aria-label="Close navigation")
+        Icon(name="close" size={16})
+    p#mobile-navigation-description.sr-only Swipe right or use the close button to close navigation.
+    MobileSidebarNav(navigation={navigation} onNavigate={() => onOpenChange(false)})
+    footer.sidebar-footer
+      ThemeToggle
+      span Private on-device OCR

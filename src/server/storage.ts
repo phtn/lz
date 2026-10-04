@@ -1,5 +1,5 @@
 import type { CloudflarePlatform } from '@octanejs/adapter-cloudflare'
-import type { CategoryName } from '@/types/file'
+import type { CategoryName, JevAssessment } from '@/types/file'
 
 const FILE_URL_TTL_SECONDS = 15 * 60
 
@@ -7,6 +7,7 @@ export type CloudflareEnv = {
   DROPZONE_FILES: R2Bucket
   CONVEX_URL: string
   FILE_URL_SIGNING_KEY: string
+  TYPESAFE_API_KEY?: string
 }
 
 export type AppPlatform = CloudflarePlatform<CloudflareEnv>
@@ -21,7 +22,15 @@ export type FileRecord = {
   confidence: number
   excerpt: string
   objectKey: string
+  thumbnailKey?: string
   createdAt: number
+  method?: string
+  text?: string
+  ocrConfidence?: number
+  pagesRead?: number
+  pageCount?: number
+  warning?: string
+  jev?: JevAssessment
 }
 
 function inlineContentDisposition(name: string) {
@@ -43,14 +52,20 @@ function requireBucket(platform: AppPlatform) {
   return bucket
 }
 
+let cachedSecret = ''
+let cachedSigningKey: Promise<CryptoKey> | undefined
+
 async function hmacKey(secret: string) {
-  return await crypto.subtle.importKey(
+  if (cachedSecret === secret && cachedSigningKey) return cachedSigningKey
+  cachedSecret = secret
+  cachedSigningKey = crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify']
   )
+  return cachedSigningKey
 }
 
 function signaturePayload(externalId: string, objectKey: string, expires: number) {
@@ -186,7 +201,7 @@ export async function serveStoredFile(
   const headers = new Headers()
   object.writeHttpMetadata(headers)
   headers.set('accept-ranges', 'bytes')
-  headers.set('cache-control', 'private, no-store')
+  headers.set('cache-control', objectKey.includes('/thumbnails/') ? 'private, max-age=300' : 'private, no-store')
   headers.set('etag', object.httpEtag)
 
   if (object.range) {

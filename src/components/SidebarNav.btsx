@@ -1,0 +1,6 @@
+import Branched from './Branched.btsx'
+import type { WorkspaceNavigationProps } from '@/types/layout'
+
+props { isCompact = false, onNavigate, onExpand, ...navigation }: WorkspaceNavigationProps & { isCompact?: boolean; onNavigate?: VoidFunction; onExpand?: VoidFunction }
+
+Branched({...navigation} isCompact={isCompact} onNavigate={onNavigate} onExpand={onExpand})

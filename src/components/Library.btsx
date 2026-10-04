@@ -6,162 +6,91 @@ module
     activeCategory: CategoryName;
     setActiveCategory: (category: CategoryName) => void;
     search: string;
-    deleteFile: (id: string) => void | Promise<void>;
     selectedFileId: string | null;
     selectFile: (id: string) => void;
-    onAddFiles: () => void;
+    onAddFiles: VoidFunction;
+    loading: boolean;
+    onRefresh: VoidFunction;
   }
-
-  interface EmptyLibraryProps { filtered: boolean }
-
+  const skeletonCards = [1, 2, 3, 4, 5, 6];
   function formatFileDate(value: string) {
-    return new Intl.DateTimeFormat('en', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'UTC'
-    }).format(new Date(value));
+    return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(value));
   }
 
 import { useState } from 'octane'
-import { CATEGORY_META } from '@/constants/meta'
+import { CATEGORY_GROUPS, CATEGORY_NAMES, SHOW_EMPTY_FOLDERS } from '@/constants/meta'
 import type { CategoryName, StoredFile } from '@/types/file'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
-import {Icon} from '@/lib/icons'
-import { cn } from '@/lib/utils'
+import { Icon } from '@/lib/icons'
 
-component EmptyLibrary
-  props { filtered }: EmptyLibraryProps
-  div(className="flex min-h-[180px] items-center justify-center gap-[13px] p-7 text-muted-foreground")
-    span(className="grid size-[43px] shrink-0 place-items-center rounded-xl bg-brand-soft text-brand")
-      Icon(name={filtered ? 'search' : 'folder'})
-    div
-      strong(className="block text-[11.5px] text-foreground") #{filtered ? 'No files match this view' : 'Your organized files will appear here'}
-      p(className="mb-0 mt-[5px] text-[9.75px] text-muted-foreground") #{filtered ? 'Try another search or smart folder.' : 'Add a file and DropZone will classify it automatically.'}
-
-props { filteredLibrary, categoryCounts, activeCategory, setActiveCategory, search, deleteFile, selectedFileId, selectFile, onAddFiles }: LibraryProps
+props { filteredLibrary, categoryCounts, activeCategory, setActiveCategory, search, selectedFileId, selectFile, onAddFiles, loading, onRefresh }: LibraryProps
 setup
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const quickCategories = (Object.keys(CATEGORY_META) as CategoryName[])
-    .filter((category) => category !== 'All' && (categoryCounts.get(category) ?? 0) > 0)
-    .sort((a, b) => (categoryCounts.get(b) ?? 0) - (categoryCounts.get(a) ?? 0))
-    .slice(0, 4);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  const [sort, setSort] = useState('newest');
+  const [visibleCount, setVisibleCount] = useState(48);
+  const sortedFiles = [...filteredLibrary].sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : sort === 'size' ? b.size - a.size : Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  const visibleFiles = sortedFiles.slice(0, visibleCount);
+  const populatedCategories = SHOW_EMPTY_FOLDERS ? CATEGORY_NAMES : CATEGORY_NAMES.filter((category) => (categoryCounts.get(category) ?? 0) > 0);
 
-fragment
-  if quickCategories.length > 0
-    section(className="hidden rounded-2xl border border-sidebar-border bg-surface p-[17px] shadow-[0_1px_2px_rgba(25,31,55,0.04)] max-[620px]:p-3.5" aria-labelledby="quick-access-title")
-      div(className="mb-3.5 flex items-center justify-between gap-5 [&_h2]:m-0 [&_h2]:text-xs [&_p]:mb-0 [&_p]:mt-1 [&_p]:text-[9.5px] [&_p]:text-muted-foreground")
-        div
-          h2#quick-access-title Quick access
-          p Your busiest smart folders
-        button(className="cursor-pointer border-0 bg-transparent text-[10.5px] font-[620] text-brand" type="button" onClick={() => setActiveCategory('All')}) View all
-      div(className="grid grid-cols-4 gap-2.5 max-[1320px]:grid-cols-2 max-[620px]:grid-cols-1 max-[620px]:[&>button:nth-child(n+4)]:hidden")
-        each category in quickCategories key category
-          button(
-            ~ className={[
-            ~   'grid min-h-[76px] min-w-0 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-xl border border-sidebar-border bg-surface p-3 text-left text-foreground transition-all duration-150 hover:-translate-y-px hover:border-brand/35 hover:bg-accent hover:shadow-[0_8px_18px_rgba(37,43,70,0.06)] [&>span:nth-child(2)]:grid [&>span:nth-child(2)]:min-w-0 [&>span:nth-child(2)]:gap-[5px] [&>svg]:text-muted-foreground [&_strong]:overflow-hidden [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap [&_strong]:text-[11px] [&_small]:text-[9.5px] [&_small]:text-muted-foreground',
-            ~   activeCategory === category && '-translate-y-px border-brand/35 bg-accent shadow-[0_8px_18px_rgba(37,43,70,0.06)]'
-            ~ ]}
-            ~ type="button"
-            ~ onClick={() => setActiveCategory(category)}
-            ~ )
-            span(className="grid size-[37px] place-items-center rounded-[10px]"
-              ~ style={{ color: CATEGORY_META[category].color, background: CATEGORY_META[category].background }}
-              ~ )
-              Icon(name="folder" className="size-6")
-            span
-              strong #{category}
-              small #{categoryCounts.get(category) ?? 0} #{(categoryCounts.get(category) ?? 0) === 1 ? 'file' : 'files'}
-            Icon(name="chevron-right" size={16})
+section.library(aria-labelledby="library-title" aria-busy={loading})
+  header.library-header
+    div
+      span.eyebrow Your cloud library
+      h2#library-title #{activeCategory === 'All' ? 'All files' : activeCategory}
+        small #{filteredLibrary.length}
+    div.library-tools
+      button.icon-button(type="button" onClick={onRefresh} disabled={loading} aria-label="Refresh library" title="Refresh library")
+        Icon(name={loading ? 'spinner-ring' : 'refresh'} size={14})
+      label.sort-control
+        span.sr-only Sort files
+        select(value={sort} onChange={(event) => setSort(event.currentTarget.value)} aria-label="Sort files" style={{ ...({ ...({ ...({ ...({ ...({ ...({ ...({}), "height": "36px" }), "padding-bottom": "6px" }), "padding-bottom": "4px" }), "padding-bottom": "2px" }), "padding-bottom": "1px" }), "padding-bottom": "12px" }), "padding-bottom": "10px" }})
+          option(value="newest") Newest first
+          option(value="name") Name A–Z
+          option(value="size") Largest first
+      div.view-toggle(aria-label="File view" style={{ ...({}), "height": "36px" }})
+        button.icon-button(className={viewMode === 'grid' ? 'is-active' : ''} type="button" onClick={() => setViewMode('grid')} aria-label="Grid view" aria-pressed={viewMode === 'grid'})
+          Icon(name="grid" size={18})
+        button.icon-button(className={viewMode === 'list' ? 'is-active' : ''} type="button" onClick={() => setViewMode('list')} aria-label="List view" aria-pressed={viewMode === 'list'})
+          Icon(name="list" size={18})
 
-  section#library(className="mt-[18px] scroll-mt-4 overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:mt-0 dark:h-full dark:rounded-[4px] dark:border dark:border-border dark:bg-surface dark:shadow-[inset_0.5px_1.25px_0_#3b3b3b]" aria-labelledby="library-title")
-    div(className="flex items-center justify-between border-b border-border/50 px-4 dark:rounded-t-[2px] dark:border-[#0b0b0b] dark:bg-[#303030] max-[620px]:items-start dark:bg-[#242424] dark:shadow-[inset_0.75px_2px_0.75px_#3b3b3b,inset_-0.75px_0_0_#3b3b3b]")
-      div(className="flex items-center h-10 gap-2 text-xs text-muted-foreground [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-sm [&_p]:text-foreground")
-        span Files
-        Icon(name="down" className="-rotate-90 dark:text-indigo-300")
-        p#library-title #{activeCategory === 'All' ? 'All files' : activeCategory}
-      div(className="ml-auto flex items-center justify-between h-10")
-        div(className="flex items-center justify-between rounded-sm dark:rounded-xs h-6 dark:h-8 w-16 border border-border/80 divide-x divide-border bg-accent overflow-hidden dark:border-border [&_button]:cursor-pointer " aria-label="File view")
-          button(
-            ~ className={cn('size-full bg-surface rounded-none text-muted-foreground', {'dark:text-indigo-300 bg-deep shadow-inner' :viewMode === 'list'})}
-            ~ type="button"
-            ~ aria-label="List view"
-            ~ aria-pressed={viewMode === 'list'}
-            ~ onClick={() => setViewMode('list')}
-            ~ )
-            Icon(name="list")
-          button(
-            ~ className={cn('size-full bg-surface rounded-none text-muted-foreground', {'dark:text-indigo-300 bg-deep shadow-inner' :viewMode === 'grid'})}
-            ~ type="button"
-            ~ aria-label="Grid view"
-            ~ aria-pressed={viewMode === 'grid'}
-            ~ onClick={() => setViewMode('grid')}
-            ~ )
-            Icon(name="grid")
-
-    if filteredLibrary.length === 0
-      EmptyLibrary(filtered={Boolean(search || activeCategory !== 'All')})
-    elseif viewMode === 'list'
-      div.min-w-0(role="table" aria-label="File library" className="dark:bg-[#242424]")
-        div(className="grid min-h-[38px] grid-cols-[minmax(220px,1.65fr)_minmax(112px,0.75fr)_78px_112px_96px] items-center gap-x-3 dark:border-y border-sidebar-border bg-card px-[15px] text-[9px] font-[650] uppercase tracking-[0.035em] text-muted-foreground dark:min-h-[34px] dark:rounded-[1.5px] dark:border-[#111] dark:bg-muted dark:text-[#858585] max-[1100px]:grid-cols-[minmax(210px,1.6fr)_minmax(100px,0.7fr)_72px_94px] max-[1100px]:[&>:nth-child(4)]:hidden max-[620px]:hidden" role="row")
-          span(role="columnheader") Name
-          span(role="columnheader") Smart folder
-          span(role="columnheader") Size
-          span(role="columnheader") Added
-          span(aria-hidden="true")
-        div
-          each file in filteredLibrary key file.id
-            div(
-              ~ className={[
-              ~ 'group grid min-h-[62px] grid-cols-[minmax(220px,1.65fr)_minmax(112px,0.75fr)_78px_112px_96px] items-center gap-x-3 border-b dark:border-b-[0.33px] border-sidebar-border px-[15px] py-2 transition-all duration-[130ms] [content-visibility:auto] [contain-intrinsic-size:0_62px] last:border-b-0 hover:bg-accent dark:min-h-[56px] dark:border-[#141414] dark:hover:bg-[#383838] max-[1100px]:grid-cols-[minmax(210px,1.6fr)_minmax(100px,0.7fr)_72px_94px] max-[1100px]:[&>:nth-child(4)]:hidden max-[620px]:min-h-[66px] max-[620px]:grid-cols-[minmax(0,1fr)_auto] max-[620px]:px-3 max-[620px]:py-2.5 max-[620px]:[&>:nth-child(2)]:hidden max-[620px]:[&>:nth-child(4)]:hidden max-[620px]:[&>:nth-child(3)]:col-start-2 max-[620px]:[&>:nth-child(3)]:row-start-1',
-              ~   selectedFileId === file.id && 'bg-brand-soft shadow-[inset_3px_0_0_var(--brand)] dark:bg-muted dark:shadow-[inset_3px_0_0_#bdbdbd]'
-              ~ ]}
-              ~ role="row"
-              ~ tabIndex={0}
-              ~ onClick={(event) => {
-              ~   if (!(event.target as Element).closest('a, button')) selectFile(file.id);
-              ~ }}
-              ~ onKeyDown={(event) => {
-              ~   if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
-              ~     event.preventDefault();
-              ~     selectFile(file.id);
-              ~   }
-              ~ }}
-              ~ )
-              div(className="flex min-w-0 items-center gap-2.5" role="cell")
-                span(className="grid size-[34px] shrink-0 place-items-center rounded bg-brand-soft text-brand dark:rounded-full dark:border dark:border-[#151515] dark:bg-[#262626] dark:shadow-[inset_0_1px_0_#474747] [&>div]:flex")
-                  Icon(name={getFileIcon(file.name, file.mimeType)} className="size-7")
-                button(className="grid min-w-0 cursor-pointer gap-1 border-0 bg-transparent p-0 text-left text-inherit [&_small]:text-[9px] [&_small]:text-muted-foreground" type="button" onClick={() => selectFile(file.id)} title={file.name})
-                  p.text-sm #{file.name}
-                  small #{file.kind}
-              div(role="cell")
-                CategoryPill(category={file.category})
-              span(className="text-[9.75px] text-muted-foreground" role="cell") #{formatBytes(file.size)}
-              span(className="text-[9.75px] text-muted-foreground" role="cell") #{formatFileDate(file.createdAt)}
-              div(className={['flex items-center justify-end gap-0.5 opacity-0 transition-opacity duration-[130ms] group-hover:opacity-100 group-focus-within:opacity-100 max-[620px]:hidden [&_a]:grid [&_a]:size-7 [&_a]:cursor-pointer [&_a]:place-items-center [&_a]:rounded-[7px] [&_a]:border-0 [&_a]:bg-transparent [&_a]:p-0 [&_a]:text-muted-foreground [&_a]:no-underline [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand [&_button]:grid [&_button]:size-7 [&_button]:cursor-pointer [&_button]:place-items-center [&_button]:rounded-[7px] [&_button]:border-0 [&_button]:bg-transparent [&_button]:p-0 [&_button]:text-muted-foreground [&_button:hover]:bg-brand-soft [&_button:hover]:text-brand', selectedFileId === file.id && 'opacity-100']} role="cell")
-                a(href={file.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${file.name}`})
-                  Icon(name="external-link" size={15})
-                button(type="button" onClick={() => void deleteFile(file.id)} aria-label={`Delete ${file.name}`})
-                  Icon(name="trash-delete")
-                button(type="button" aria-label={`More options for ${file.name}`})
-                  Icon(name="more-h")
-    else
-      div(className="grid grid-cols-3 max-[820px]:grid-cols-2 max-[620px]:grid-cols-1 divide-x divide-y divide-border")
-        each file in filteredLibrary key file.id
-          article(className={[
-            ~ 'min-w-0 rounded-xs last:border-b last:border-r border-sidebar-border bg-card p-[13px] transition-all duration-150 hover:shadow-[0_10px_24px_rgba(30,36,60,0.07)] dark:rounded-xs dark:border-[#111] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#404040]',
-            ~ selectedFileId === file.id && 'border-brand/35 bg-accent shadow-[0_10px_24px_rgba(30,36,60,0.07)] dark:bg-muted',
-            ~ viewMode === 'list' && 'dark:hover:bg-brand'
-            ~ ]})
-            div(className="flex items-center justify-between gap-2.5")
-              span(className="grid size-8 shrink-0 place-items-center rounded-sm text-brand [&>div]:flex")
-                Icon(name={getFileIcon(file.name, file.mimeType)} size={22})
-              button(className="grid size-6 cursor-pointer place-items-center rounded-full bg-transparent p-0 text-muted-foreground hover:bg-brand-soft/50 hover:text-brand" type="button" aria-label={`More options for ${file.name}`})
-                Icon(name="more" size={12})
-            button(className="mt-[18px] w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-inherit [&_h3]:m-0 [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap [&_h3]:text-[11px] [&_h3]:text-foreground [&_p]:mb-0 [&_p]:mt-[5px] [&_p]:text-[9.25px] [&_p]:text-muted-foreground" type="button" onClick={() => selectFile(file.id)})
-              h3(title={file.name}) #{file.name}
-              // p #{file.kind}
-            div(className="mt-[15px] flex items-center justify-between gap-2.5 text-[9px] text-muted-foreground")
+  if loading && filteredLibrary.length === 0
+    div.library-skeleton(aria-label="Loading files")
+      each value in skeletonCards key value
+        div.skeleton-card
+  elseif filteredLibrary.length === 0
+    div.empty-library
+      span.empty-icon_
+        Icon(name={search || activeCategory !== 'All' ? 'search' : 'new-folder'} size={50} className="text-accent")
+      h3 #{search || activeCategory !== 'All' ? 'A fresh view, waiting for files' : 'Everything in its right place.'}
+      p(className='text-balance') #{search || activeCategory !== 'All' ? 'Try another folder or search, or add a file to this workspace.' : 'Start with a receipt, photo, or document. We’ll take care of the sorting.'}
+      button.button-primary(type="button" onClick={onAddFiles})
+        Icon(name="add" size={12})
+        | Upload files
+  else
+    fragment
+      div.file-collection(className={viewMode === 'grid' ? 'file-grid' : 'file-list'})
+        each file in visibleFiles key file.id
+          button.file-card(className={selectedFileId === file.id ? 'is-selected' : ''} type="button" onClick={() => selectFile(file.id)} aria-label={`Preview ${file.name}, ${file.category}, ${formatBytes(file.size)}`} aria-pressed={selectedFileId === file.id})
+            div.file-thumbnail
+              if file.mimeType.startsWith('image/')
+                img(src={file.thumbnailUrl ?? file.url} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.hidden = true; }})
+              Icon(name={getFileIcon(file.name, file.mimeType)} size={32})
+              span.thumbnail-type #{file.name.split('.').pop()?.toUpperCase() ?? 'FILE'}
+              span.preview-hint
+                Icon(name="expand" size={17})
+                | Preview
+            div.file-info
+              strong(title={file.name}) #{file.name}
+              span.file-kind #{file.kind}
               CategoryPill(category={file.category})
-              span #{formatBytes(file.size)}
+              div.file-meta
+                span #{formatBytes(file.size)}
+                span #{formatFileDate(file.createdAt)}
+            span.file-ready(title={file.warning ? 'Filed · review text extraction' : 'Filed and ready for remote viewing'})
+              Icon(name={file.warning ? 'alert-fill' : 'check'} size={14})
+      if visibleFiles.length < sortedFiles.length
+        button.button-secondary.load-more(type="button" onClick={() => setVisibleCount((count) => count + 48)}) Show more files (#{sortedFiles.length - visibleFiles.length} remaining)
+  footer.library-footer
+    Icon(name="cloud" size={15})
+    span Originals stored in the cloud. Text recognition happens on your device.

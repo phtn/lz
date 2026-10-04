@@ -1,29 +1,33 @@
 import { defineConfig } from '@rsbuild/core'
 import { pluginOctane } from '@octanejs/rsbuild-plugin'
 import { beast } from 'beast-tsrx/rspack'
+import { beastDevtools } from '@beastjs/devtools/rsbuild'
 
 export default defineConfig({
   html: {
-    title: 'DropZone — Local-first file organizer'
+    title: 'DropZone — Your files, already organized'
   },
   server: {
     // Rsbuild's automatic copy treats a Web Worker server as browser output
     // and would duplicate every public asset into dist/server.
-    publicDir: {
-      name: 'public',
-      copyOnBuild: false
-    }
+    publicDir: [
+      { name: 'node_modules/pdfjs-dist/legacy/build', copyOnBuild: false },
+      { name: 'public', copyOnBuild: false }
+    ]
   },
   splitChunks: {
-    // Keep large dependencies in independently cacheable chunks. OCR and PDF
-    // modules also use dynamic imports, so they remain off the initial path.
+    // Octane early hydration needs a self-contained entry. Split only async
+    // imports, keeping OCR and PDF dependencies off the initial path.
     preset: 'per-package',
-    chunks: 'all'
+    chunks: 'async'
   },
   environments: {
     web: {
       output: {
-        copy: [{ from: './public', to: '.' }]
+        copy: [
+          { from: './public', to: '.', globOptions: { ignore: ['**/pdf.worker.mjs', '**/.DS_Store'] } },
+          { from: './node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs', to: 'pdf.worker.mjs' }
+        ]
       },
       tools: {
         rspack(config) {
@@ -45,11 +49,5 @@ export default defineConfig({
       }
     }
   },
-  source: {
-    // Keep the global stylesheet in the eager client entry. Route entries are
-    // loaded asynchronously by Octane, so importing global CSS only from a
-    // route can leave the initial document unstyled in development.
-    preEntry: ['./src/style.css']
-  },
-  plugins: [pluginOctane({ strong: true })]
+  plugins: [pluginOctane({ strong: true }), beastDevtools()]
 })

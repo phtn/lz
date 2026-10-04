@@ -1,4 +1,5 @@
 
+import '@/style.css'
 import { use } from 'octane'
 import { loadInitialState } from 'server'
 import FileDashboard from '@/components/FileDashboard.btsx'
@@ -7,12 +8,12 @@ import ThemeProvider from '@/components/ThemeProvider.btsx'
 
 module
   module server {
-    import type { StoredFile } from './types/file';
+    import type { StoredFile } from '@/types/file';
 
     export async function loadInitialState() {
       return {
         library: [] as StoredFile[],
-        socialImage: '/dropzone-og.png'
+        socialImage: '/dropzone.webp'
       };
     }
   }
@@ -33,14 +34,14 @@ fragment
   meta(property="og:title" content="DropZone — Drop it. We'll sort it.")
   meta(
     ~ property="og:description"
-    ~ content="Private, local-first file classification with a fast multi-file upload queue."
+    ~ content="Private on-device OCR, live cloud uploads, and files organized for every device."
     ~ )
   meta(property="og:type" content="website")
   meta(name="twitter:card" content="summary_large_image")
   meta(name="twitter:title" content="DropZone — Drop it. We'll sort it.")
   meta(
     ~ name="twitter:description"
-    ~ content="Private, local-first file classification with a fast multi-file upload queue."
+    ~ content="Private on-device OCR, live cloud uploads, and files organized for every device."
     ~ )
   try
     Dashboard

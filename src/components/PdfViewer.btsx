@@ -1,0 +1,82 @@
+module
+  "use strong";
+  interface PdfViewerProps { file: StoredFile }
+  interface PdfResource { url: string; promise: Promise<PDFDocumentProxy>; destroy: () => void }
+import { useEffect, useEffectEvent, useLinkedState, useRef } from 'octane'
+import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
+import type { StoredFile } from '@/types/file'
+import { Icon } from '@/lib/icons'
+props { file }: PdfViewerProps
+setup
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const resourceRef = useRef<PdfResource | null>(null);
+  const [pageCount, setPageCount] = useLinkedState(file.url, () => 0);
+  const [page, setPage] = useLinkedState(file.id, () => 1);
+  const [busy, setBusy] = useLinkedState(`${file.url}:${page}`, () => true);
+  const [error, setError] = useLinkedState(file.id, () => '');
+  const openPdf = useEffectEvent((url: string) => {
+    if (resourceRef.current?.url === url) return resourceRef.current;
+    let disposed = false;
+    let destroy: (() => Promise<void>) | undefined;
+    const resource: PdfResource = {
+      url,
+      promise: (async () => {
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        if (disposed) throw new DOMException('Preview closed', 'AbortError');
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+        const task = pdfjs.getDocument({ url });
+        destroy = () => task.destroy();
+        return await task.promise;
+      })(),
+      destroy: () => { disposed = true; void destroy?.(); }
+    };
+    resourceRef.current = resource;
+    return resource;
+  });
+  useEffect(() => {
+    const resource = openPdf(file.url);
+    return () => resource.destroy();
+  });
+  useEffect(() => {
+    const resource = openPdf(file.url);
+    let disposed = false;
+    let task: RenderTask | undefined;
+    void (async () => {
+      try {
+        const pdf = await resource.promise;
+        if (disposed) return;
+        setPageCount(pdf.numPages);
+        const pdfPage = await pdf.getPage(page);
+        if (disposed) return;
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext('2d');
+        if (!canvas || !context) return;
+        const base = pdfPage.getViewport({ scale: 1 });
+        const width = Math.min(1600, Math.max(320, canvas.parentElement?.clientWidth ?? 900) * Math.min(window.devicePixelRatio, 2));
+        const viewport = pdfPage.getViewport({ scale: width / base.width });
+        canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+        task = pdfPage.render({ canvas, canvasContext: context, viewport });
+        await task.promise;
+        if (!disposed) setBusy(false);
+      } catch { if (!disposed) { setError('This PDF could not be previewed. Open the original to view it.'); setBusy(false); } }
+    })();
+    return () => { disposed = true; task?.cancel(); };
+  });
+
+div.pdf-viewer
+  div.pdf-stage
+    if busy
+      div.preview-status(role="status")
+        Icon(name="spinner-ring" size={24})
+        span Loading PDF page…
+    if error
+      div.preview-status(role="alert")
+        p #{error}
+        a.button-secondary(href={file.url} target="_blank" rel="noopener noreferrer") Open original
+    canvas(ref={canvasRef} aria-label={`Page ${page} of ${pageCount || 'PDF'}`} hidden={Boolean(error)})
+  div.viewer-controls
+    button.icon-button(type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={!pageCount || page <= 1 || busy} aria-label="Previous PDF page")
+      Icon(name="arrow-left" size={20})
+    span Page #{page} / #{pageCount || '…'}
+    button.icon-button(type="button" onClick={() => setPage((value) => Math.min(pageCount || 1, value + 1))} disabled={!pageCount || page >= pageCount || busy} aria-label="Next PDF page")
+      Icon(name="arrow-right" size={20})

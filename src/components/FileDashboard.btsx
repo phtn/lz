@@ -1,345 +1,318 @@
 module
   "use strong";
-  interface FileDashboardProps {
-    initialLibrary?: StoredFile[];
-  }
-
+  interface FileDashboardProps { initialLibrary?: StoredFile[] }
   const LazyFileDetails = lazy(() => import('./FileDetails.btsx'));
   const LazyQueue = lazy(() => import('./Queue.btsx'));
 
-import { lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'octane'
-import { authenticatedFetch, getCurrentUser, getServerAuthUser, subscribeToAuthState } from '@/lib/firebase'
+import { lazy, useEffect, useEffectEvent, useLinkedState, useRef, useState, useSyncExternalStore } from 'octane'
+import { authenticatedFetch, getCurrentUser, getServerAuthUser, subscribeToAuthState, signInWithGoogle } from '@/lib/firebase'
+import { uploadFile } from '@/lib/upload'
 import type { CategoryName, QueueItem, StoredFile } from '@/types/file'
-import { analyzeFile } from '@/utils/helpers'
+import { MAX_FILE_SIZE, SHOW_EMPTY_FOLDERS } from '@/constants/meta'
+import { analyzeFile } from '@/utils/ocr'
+import { createThumbnail } from '@/utils/thumbnail'
 import DropZone from './DropZone.btsx'
-import {Icon} from '@/lib/icons'
+import { Icon } from '@/lib/icons'
 import Library from './Library.btsx'
-import Topbar from './Topbar.btsx'
-import Sidebar from './Sidebar.btsx'
-
-component EmptyFileDetails
-  aside(className="h-full min-h-0 overflow-y-auto rounded-2xl border border-sidebar-border bg-surface shadow-[0_1px_2px_rgba(25,31,55,0.04)] [scrollbar-color:#d8dbe4_transparent] [scrollbar-width:thin] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-surface dark:shadow-[inset_0_1.25px_0_#3b3b3b,inset_0.75px_0_0_#3b3b3b] max-[1100px]:hidden" aria-label="File details")
-    div(className="grid min-h-[calc(100%-54px)] content-center justify-items-center p-7 text-center")
-      span(className="grid size-12 place-items-center rounded-[14px] bg-muted text-muted-foreground")
-        Icon(name="search")
-      h2(className="mb-0 mt-3.5 text-xs text-foreground") Select a file
-      p(className="mb-0 mt-[7px] max-w-[205px] text-[9.5px] leading-[1.55] text-muted-foreground") Choose a file to see its classification, content summary, and local activity.
-
-component FileDetailsLoadError
-  aside(className="h-full min-h-0 rounded-2xl border border-sidebar-border bg-surface p-7 text-center shadow-[0_1px_2px_rgba(25,31,55,0.04)] dark:rounded-[4px] dark:border-[0.33px] dark:border-[#050505] dark:bg-[#2c2c2c] dark:shadow-[inset_0_1px_0_#3b3b3b,inset_1px_0_0_#3b3b3b] max-[1100px]:hidden" role="alert")
-    div(className="grid h-full content-center justify-items-center")
-      span(className="grid size-12 place-items-center rounded-[14px] bg-destructive/10 text-destructive")
-        Icon(name="alert-fill")
-      h2(className="mb-0 mt-3.5 text-xs text-foreground") Details unavailable
-      p(className="mb-0 mt-[7px] max-w-[205px] text-[9.5px] leading-[1.55] text-muted-foreground") Select the file again to retry loading its details.
+import WorkspaceLayout from '@/layouts/WorkspaceLayout.btsx'
 
 props { initialLibrary = [] }: FileDashboardProps
 setup
-  const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [library, setLibrary, getLibrary] = useState<StoredFile[]>(initialLibrary);
+  const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
+  const accountUid = currentUser?.uid;
+  const [queue, setQueue] = useLinkedState(currentUser?.uid, () => [] as QueueItem[]);
+  const [library, setLibrary, getLibrary] = useLinkedState<string | undefined, StoredFile[]>(currentUser?.uid, (_uid, previous) => previous ? [] as StoredFile[] : initialLibrary);
   const [isDragging, setIsDragging] = useState(false);
-  const [isDropZoneExpanded, setIsDropZoneExpanded] = useState(false);
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState<CategoryName>('All');
+  const [categorySelection, setActiveCategory] = useState<CategoryName>('All');
   const [isQueueOpen, setIsQueueOpen] = useState(false);
-  const [selectedFileId, setSelectedFileId, getSelectedFileId] = useState<string | null>(null);
+  const [selectedFileId, setSelectedFileId, getSelectedFileId] = useLinkedState(currentUser?.uid, () => null as string | null);
+  const [language, setLanguage, getLanguage] = useState('eng');
+  const [loading, setLoading] = useLinkedState(currentUser?.uid, () => Boolean(currentUser));
+  const [notice, setNotice] = useLinkedState(currentUser?.uid, () => '');
+  const [announcement, setAnnouncement] = useLinkedState(currentUser?.uid, () => '');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const queueRef = useRef<QueueItem[]>([]);
-  const processingRef = useRef(false);
-  const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
+  const runningRef = useRef(0);
+  const controllersRef = useRef(new Map<string, AbortController>());
+  const libraryControllerRef = useRef<AbortController | null>(null);
+  const deletedIdsRef = useRef(new Set<string>());
+  const [deletedIds, setDeletedIds] = useLinkedState(currentUser?.uid, () => new Set<string>());
+  const mountedRef = useRef(true);
+  const lastRefreshRef = useRef(0);
+  const [searchResults, setSearchResults, getSearchResults] = useLinkedState(`${currentUser?.uid}:${search}`, () => [] as StoredFile[]);
+  const [searchBusy, setSearchBusy] = useLinkedState(`${currentUser?.uid}:${search}`, () => false);
+  useEffect(() => {
+    if (!accountUid || search.trim().length < 2) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setSearchBusy(true);
+      try {
+        const response = await authenticatedFetch(`/api/files?search=${encodeURIComponent(search.trim())}`, { signal: controller.signal });
+        const payload = await response.json() as { files?: StoredFile[] };
+        if (response.ok && !controller.signal.aborted) setSearchResults(payload.files ?? []);
+      } catch { /* Local filename and summary matches remain available when offline. */ }
+      finally { if (!controller.signal.aborted) setSearchBusy(false); }
+    }, 300);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  });
 
-  const openQueueSheet = useCallback(() => setIsQueueOpen(true), []);
-  const closeQueueSheet = useCallback(() => setIsQueueOpen(false), []);
-
-  const syncQueue = useCallback((update: (items: QueueItem[]) => QueueItem[]) => {
+  const syncQueue = (update: (items: QueueItem[]) => QueueItem[]) => {
     const next = update(queueRef.current);
     queueRef.current = next;
-    setQueue(next);
-  }, []);
-
-  const updateQueueItem = useCallback((id: string, changes: Partial<QueueItem>) => {
+    if (mountedRef.current) setQueue(next);
+  };
+  const updateQueueItem = (id: string, changes: Partial<QueueItem>) => {
     syncQueue((items) => items.map((item) => item.id === id ? { ...item, ...changes } : item));
-  }, [syncQueue]);
+  };
 
+  const applyLibrary = useEffectEvent((files: StoredFile[], startedAt: number) => {
+    const deletedSnapshot = new Set(deletedIdsRef.current);
+    setLibrary((current) => {
+      const newlyUploaded = current.filter((file) => Date.parse(file.createdAt) >= startedAt && !files.some((remote) => remote.id === file.id));
+      return [...newlyUploaded, ...files].filter((file) => !deletedSnapshot.has(file.id));
+    });
+    lastRefreshRef.current = Date.now();
+  });
+
+  const refreshLibrary = async (controller: AbortController) => {
+    const user = getCurrentUser();
+    if (!user) return;
+    libraryControllerRef.current?.abort();
+    libraryControllerRef.current = controller;
+    const startedAt = Date.now();
+    try {
+      const response = await authenticatedFetch('/api/files', { signal: controller.signal });
+      const payload = await response.json() as { files?: StoredFile[]; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? 'Your library could not be loaded.');
+      if (getCurrentUser()?.uid !== user.uid || controller.signal.aborted) return;
+      applyLibrary(payload.files ?? [], startedAt);
+    } catch (error) {
+      if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : 'Your library could not be loaded.');
+    } finally { if (!controller.signal.aborted) setLoading(false); }
+  };
+
+  const resetAccount = useEffectEvent(() => {
+    const uid = getCurrentUser()?.uid;
+    for (const item of queueRef.current) {
+      if (item.ownerUid !== uid) {
+        controllersRef.current.get(item.id)?.abort();
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      }
+    }
+    libraryControllerRef.current?.abort();
+    queueRef.current = queueRef.current.filter((item) => item.ownerUid === uid);
+    deletedIdsRef.current.clear();
+  });
+  const trackLibraryRequest = useEffectEvent((controller: AbortController) => { libraryControllerRef.current = controller; });
   useEffect(() => {
     const controller = new AbortController();
-
-    void Promise.resolve().then(async () => {
-      if (!currentUser) {
-        setLibrary([]);
-        setSelectedFileId(null);
-        return;
-      }
-
-      try {
-        const response = await authenticatedFetch('/api/files', { signal: controller.signal });
-        const payload = await response.json() as { files?: StoredFile[]; error?: string };
-        if (!response.ok) throw new Error(payload.error ?? 'Your file library could not be loaded.');
-        setLibrary(payload.files ?? []);
-      } catch {
-        if (controller.signal.aborted) return;
-        setLibrary([]);
-      }
-    });
-
+    resetAccount();
+    trackLibraryRequest(controller);
+    const startedAt = Date.now();
+    if (accountUid) {
+      void (async () => {
+        try {
+          const response = await authenticatedFetch('/api/files', { signal: controller.signal });
+          const payload = await response.json() as { files?: StoredFile[]; error?: string };
+          if (!response.ok) throw new Error(payload.error ?? 'Your library could not be loaded.');
+          if (!controller.signal.aborted) applyLibrary(payload.files ?? [], startedAt);
+        } catch (error) {
+          if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : 'Your library could not be loaded.');
+        } finally { if (!controller.signal.aborted) setLoading(false); }
+      })();
+    }
     return () => controller.abort();
-  }, [currentUser]);
+  });
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInputRef.current?.focus(); }
+    };
+    const refreshOnFocus = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastRefreshRef.current > 10 * 60 * 1000) void refreshLibrary(new AbortController());
     };
     window.addEventListener('keydown', focusSearch);
-    return () => window.removeEventListener('keydown', focusSearch);
-  }, []);
-
+    document.addEventListener('visibilitychange', refreshOnFocus);
+    const timer = window.setInterval(refreshOnFocus, 60 * 1000);
+    return () => { window.removeEventListener('keydown', focusSearch); document.removeEventListener('visibilitychange', refreshOnFocus); window.clearInterval(timer); };
+  });
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      for (const item of queueRef.current) {
-        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-      }
+      mountedRef.current = false;
+      controllersRef.current.forEach((controller) => controller.abort());
+      libraryControllerRef.current?.abort();
+      queueRef.current.forEach((item) => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
     };
-  }, []);
+  });
 
-  const processQueue = useCallback(async () => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-
-    try {
-      while (true) {
+  const processQueue = () => {
+    const startNext = () => {
+      while (runningRef.current < 2 && mountedRef.current) {
         const item = queueRef.current.find((candidate) => candidate.status === 'queued');
         if (!item) break;
-
-        try {
-          updateQueueItem(item.id, { status: 'reading', progress: 4, error: undefined });
-          const classification = await analyzeFile(item.file, (progress) => {
-            updateQueueItem(item.id, { status: 'reading', progress: Math.min(82, progress) });
-          });
-
-          updateQueueItem(item.id, { status: 'classifying', progress: 88, classification });
-          await new Promise((resolve) => window.setTimeout(resolve, 280));
-          updateQueueItem(item.id, { status: 'uploading', progress: 93 });
-
-          const formData = new FormData();
-          formData.append('file', item.file);
-          formData.append('category', classification.category);
-          formData.append('kind', classification.kind);
-          formData.append('confidence', String(classification.confidence));
-          formData.append('excerpt', classification.excerpt);
-
-          const response = await authenticatedFetch('/api/files', { method: 'POST', body: formData });
-          if (!response.ok) {
-            const payload = await response.json().catch(() => ({})) as { error?: string };
-            throw new Error(payload.error ?? 'Upload could not be completed');
+        runningRef.current++;
+        updateQueueItem(item.id, { status: 'reading', progress: 0, error: undefined });
+        const controller = new AbortController();
+        controllersRef.current.set(item.id, controller);
+        void (async () => {
+          try {
+            const classification = item.classification ?? await analyzeFile(item.file, (progress, detail) => {
+              if (!controller.signal.aborted) updateQueueItem(item.id, { progress: Math.min(40, progress * 0.4), detail });
+            }, item.language);
+            controller.signal.throwIfAborted();
+            if (getCurrentUser()?.uid !== item.ownerUid) throw new Error('Sign in to the original account and add this file again.');
+            updateQueueItem(item.id, { status: 'classifying', progress: 40, classification });
+            const form = new FormData();
+            form.append('file', item.file); form.append('uploadId', item.id);
+            const thumbnail = await createThumbnail(item.file);
+            controller.signal.throwIfAborted();
+            if (thumbnail) form.append('thumbnail', thumbnail, 'thumbnail.webp');
+            for (const key of ['category', 'kind', 'confidence', 'excerpt', 'method', 'text', 'ocrConfidence', 'pagesRead', 'pageCount', 'warning'] as const) {
+              const value = classification[key];
+              if (value !== undefined) form.append(key, String(value));
+            }
+            updateQueueItem(item.id, { status: 'uploading', progress: 40, uploadedBytes: 0 });
+            const stored = await uploadFile(form, item.ownerUid,
+              ({ percent, loaded, total, bytesPerSecond }) => updateQueueItem(item.id, { status: 'uploading', progress: 40 + percent * 0.55, uploadedBytes: loaded, totalBytes: total, bytesPerSecond }),
+              () => updateQueueItem(item.id, { status: 'filing', progress: 95, detail: 'Checking with Jev & filing your original…' }), controller.signal);
+            controller.signal.throwIfAborted();
+            if (!mountedRef.current || getCurrentUser()?.uid !== item.ownerUid) return;
+            setLibrary((current) => [stored, ...current.filter((file) => file.id !== stored.id)]);
+            updateQueueItem(item.id, { status: 'done', progress: 100, storedFile: stored, classification: { ...classification, category: stored.category, kind: stored.kind, confidence: stored.confidence, jev: stored.jev } });
+            setAnnouncement(`${stored.name} uploaded, sorted into ${stored.category}, and ready for remote viewing.${stored.jev && ['review', 'unavailable', 'skipped'].includes(stored.jev.status) ? ' Please review the folder classification.' : ''}`);
+          } catch (error) {
+            if (!controller.signal.aborted) updateQueueItem(item.id, { status: 'error', error: error instanceof Error ? error.message : 'Upload could not be completed.' });
+          } finally {
+            controllersRef.current.delete(item.id);
+            runningRef.current--;
+            startNext();
           }
-
-          const payload = await response.json() as { file: StoredFile };
-          setLibrary((current) => [payload.file, ...current.filter((file) => file.id !== payload.file.id)]);
-          if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-          syncQueue((items) => items.filter((candidate) => candidate.id !== item.id));
-        } catch (error) {
-          updateQueueItem(item.id, {
-            status: 'error',
-            progress: 0,
-            error: error instanceof Error ? error.message : 'Something went wrong'
-          });
-        }
+        })();
       }
-    } finally {
-      processingRef.current = false;
-    }
+    };
+    startNext();
+  };
 
-    if (!queueRef.current.some((item) => item.status === 'error')) setIsQueueOpen(false);
-  }, [syncQueue, updateQueueItem]);
-
-  const addFiles = useCallback((fileList: FileList | File[]) => {
-    if (!getCurrentUser()) return;
-
-    const files = Array.from(fileList).filter((file) => file.size > 0);
-    if (files.length === 0) return;
-
+  const openFilePicker = async () => {
+    setNotice('');
+    if (getCurrentUser()) { fileInputRef.current?.click(); return; }
+    try { await signInWithGoogle(); fileInputRef.current?.click(); }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'Sign in to upload your files.'); }
+  };
+  const addFiles = (fileList: FileList | File[]) => {
+    const user = getCurrentUser();
+    if (!user) { setNotice('Sign in with Google, then drop your files again to save them to your private library.'); return; }
+    const files = Array.from(fileList);
+    if (!files.length) return;
     const nextItems: QueueItem[] = files.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      status: 'queued',
-      progress: 0,
-      previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+      id: crypto.randomUUID(), file, ownerUid: user.uid, language: getLanguage(), progress: 0,
+      status: file.size === 0 || file.size > MAX_FILE_SIZE ? 'error' : 'queued',
+      error: file.size === 0 ? 'This file is empty. Choose a file with contents.' : file.size > MAX_FILE_SIZE ? 'This file exceeds the 20 MB limit.' : undefined,
+      previewUrl: file.type.startsWith('image/') && file.size <= MAX_FILE_SIZE ? URL.createObjectURL(file) : undefined
     }));
-
-    openQueueSheet();
-    syncQueue((current) => [...current, ...nextItems]);
-    window.setTimeout(() => void processQueue(), 0);
-  }, [openQueueSheet, processQueue, syncQueue]);
-
-  const retryItem = useCallback((id: string) => {
-    openQueueSheet();
-    updateQueueItem(id, { status: 'queued', error: undefined, progress: 0 });
-    window.setTimeout(() => void processQueue(), 0);
-  }, [openQueueSheet, processQueue, updateQueueItem]);
-
-  const removeQueueItem = useCallback((id: string) => {
+    setNotice(''); setIsQueueOpen(true);
+    syncQueue((items) => [...items, ...nextItems]);
+    processQueue();
+  };
+  const retryItem = (id: string) => {
     const item = queueRef.current.find((candidate) => candidate.id === id);
+    if (!item || item.file.size === 0 || item.file.size > MAX_FILE_SIZE) return;
+    updateQueueItem(id, { status: 'queued', error: undefined, progress: 0 });
+    processQueue();
+  };
+  const removeQueueItem = (id: string) => {
+    const item = queueRef.current.find((candidate) => candidate.id === id);
+    if (item && !['queued', 'done', 'error'].includes(item.status)) return;
     if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
     syncQueue((items) => items.filter((candidate) => candidate.id !== id));
-    if (queueRef.current.length === 0) closeQueueSheet();
-  }, [closeQueueSheet, syncQueue]);
-
-  const selectCategory = useCallback((category: CategoryName) => {
-    setActiveCategory(category);
-    setSelectedFileId(null);
-  }, []);
-
-  const deleteStoredFile = useCallback(async (id: string) => {
-    const snapshot = getLibrary();
-    const removedIndex = snapshot.findIndex((file) => file.id === id);
-    const removedFile = snapshot[removedIndex];
+  };
+  const clearCompleted = () => {
+    queueRef.current.filter((item) => item.status === 'done').forEach((item) => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
+    syncQueue((items) => items.filter((item) => item.status !== 'done'));
+  };
+  const selectFile = (id: string) => {
+    const result = getSearchResults().find((file) => file.id === id);
+    if (result) setLibrary((current) => current.some((file) => file.id === id) ? current : [...current, result]);
+    setSelectedFileId(id);
+  };
+  const selectCategory = (category: CategoryName) => { setActiveCategory(category); };
+  const updateStoredFile = (file: StoredFile) => { setLibrary((current) => current.map((item) => item.id === file.id ? file : item)); };
+  const deleteStoredFile = async (id: string) => {
+    const ownerUid = getCurrentUser()?.uid;
+    const file = getLibrary().find((item) => item.id === id);
+    if (!file) return;
     const wasSelected = getSelectedFileId() === id;
-    if (!removedFile) return;
-
-    setLibrary((current) => current.filter((file) => file.id !== id));
+    deletedIdsRef.current.add(id);
+    setDeletedIds(new Set(deletedIdsRef.current));
+    setLibrary((current) => current.filter((item) => item.id !== id));
     if (wasSelected) setSelectedFileId(null);
-
     try {
       const response = await authenticatedFetch(`/api/files/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (response.ok) return;
-    } catch {
-      // The rollback below restores only this file, preserving concurrent changes.
+      if (!response.ok) throw new Error('The file could not be deleted. Please retry.');
+    } catch (error) {
+      if (getCurrentUser()?.uid !== ownerUid) return;
+      deletedIdsRef.current.delete(id);
+      setDeletedIds(new Set(deletedIdsRef.current));
+      setLibrary((current) => current.some((item) => item.id === id) ? current : [file, ...current]);
+      setNotice(error instanceof Error ? error.message : 'The file could not be deleted.');
     }
-
-    setLibrary((current) => {
-      if (current.some((file) => file.id === id)) return current;
-      const next = [...current];
-      next.splice(Math.min(removedIndex, next.length), 0, removedFile);
-      return next;
-    });
-    if (wasSelected && getSelectedFileId() === null) setSelectedFileId(id);
-  }, [getLibrary, getSelectedFileId]);
-
-  const filteredLibrary = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    return library.filter((file) => {
-      const categoryMatches = activeCategory === 'All' || file.category === activeCategory;
-      const searchMatches = !needle || `${file.name} ${file.kind} ${file.category} ${file.excerpt}`.toLowerCase().includes(needle);
-      return categoryMatches && searchMatches;
-    });
-  }, [activeCategory, library, search]);
-
-  const categoryCounts = useMemo(() => {
+  };
+  const categoryCounts = (() => {
     const counts = new Map<CategoryName, number>();
-    for (const file of library) counts.set(file.category, (counts.get(file.category) ?? 0) + 1);
+    library.forEach((file) => counts.set(file.category, (counts.get(file.category) ?? 0) + 1));
     return counts;
-  }, [library]);
+  })();
+  const activeCategory = SHOW_EMPTY_FOLDERS || categorySelection === 'All' || (categoryCounts.get(categorySelection) ?? 0) > 0 ? categorySelection : 'All';
+  const filteredLibrary = (() => {
+    const needle = search.trim().toLowerCase();
+    const merged = [...library, ...searchResults.filter((result) => !library.some((file) => file.id === result.id))];
+    return merged.filter((file) => !deletedIds.has(file.id) && (activeCategory === 'All' || file.category === activeCategory) &&
+      (!needle || searchResults.some((result) => result.id === file.id) || `${file.name} ${file.kind} ${file.category} ${file.excerpt}`.toLowerCase().includes(needle)));
+  })();
+  const activeQueueCount = queue.filter((item) => !['done', 'error'].includes(item.status)).length;
+  const selectedFile = library.find((file) => file.id === selectedFileId) ?? searchResults.find((file) => file.id === selectedFileId) ?? null;
 
-  const activeQueueCount = queue.filter((item) => item.status !== 'done' && item.status !== 'error').length;
-  const selectedFile = useMemo(
-    () => library.find((file) => file.id === selectedFileId) ?? null,
-    [library, selectedFileId]
-  );
+  const previewFiles = selectedFile && !filteredLibrary.some((file) => file.id === selectedFile.id) ? [selectedFile, ...filteredLibrary] : filteredLibrary;
 
-div(className="min-h-screen bg-background")
-  Topbar(
-    ~ search={search}
-    ~ setSearch={setSearch}
-    ~ fileInputRef={fileInputRef}
-    ~ searchInputRef={searchInputRef}
+div.dashboard
+  WorkspaceLayout(
+    ~ navigation={{ activeQueueCount, library, activeCategory, setActiveCategory: selectCategory, categoryCounts, onOpenQueue: () => setIsQueueOpen(true) }}
+    ~ topbar={{ search, setSearch, searchInputRef, onAddFiles: () => void openFilePicker() }}
     ~ )
-
-  div(className="grid h-[calc(100vh-72px)] grid-cols-[218px_minmax(0,1fr)_304px] md:gap-[18px] px-5 md:pb-5 dark:h-[calc(100vh-52px)] dark:grid-cols-[280px_minmax(0,1fr)_330px] dark:gap-px dark:bg-[#090909] dark:p-px max-[1320px]:grid-cols-[198px_minmax(0,1fr)_276px] max-[1320px]:dark:grid-cols-[260px_minmax(0,1fr)_310px] max-[1100px]:grid-cols-[198px_minmax(0,1fr)] max-[1100px]:dark:grid-cols-[240px_minmax(0,1fr)] max-[820px]:h-[calc(100vh-64px)] max-[820px]:grid-cols-[minmax(0,1fr)] max-[820px]:px-3 max-[820px]:dark:h-[calc(100vh-64px)] max-[820px]:dark:grid-cols-[minmax(0,1fr)] max-[820px]:dark:gap-px max-[820px]:dark:p-px")
-    Sidebar(
-      ~ activeQueueCount={activeQueueCount}
-      ~ library={library}
-      ~ activeCategory={activeCategory}
-      ~ setActiveCategory={selectCategory}
-      ~ categoryCounts={categoryCounts}
-      ~ search={search}
-      ~ setSearch={setSearch}
-      ~ searchInputRef={searchInputRef}
-      ~ )
-
-    main(className="h-full min-h-0 overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] dark:bg-background")
-      div(className="mx-auto w-[min(100%,1120px)] py-0 md:pb-1.5 _pb-12 dark:grid dark:h-full dark:w-full dark:grid-rows-[auto_minmax(0,1fr)] dark:gap-px dark:bg-[#090909] dark:py-0 dark:pb-0 max-[820px]:pb-8 max-[820px]:dark:gap-px max-[820px]:dark:pb-0")
-        div(
-          ~ className={[
-          ~   'hidden md:grid transition-[grid-template-rows,opacity,transform,visibility] ease-[cubic-bezier(0.22,1,0.36,1)] dark:hidden',
-          ~   isDropZoneExpanded
-          ~     ? 'invisible grid-rows-[minmax(0,0fr)] -translate-y-7 opacity-0 [transition-duration:480ms,180ms,360ms,0s] [transition-delay:0s,0s,0s,480ms]'
-          ~     : 'visible grid-rows-[minmax(0,1fr)] translate-y-0 opacity-100 [transition-duration:520ms,220ms,420ms,0s] [transition-delay:0s,0s,0s,0s]'
-          ~ ]}
-          ~ aria-hidden={isDropZoneExpanded}
-          ~ inert={isDropZoneExpanded}
-          ~ )
-          header(className="flex min-h-0 items-end justify-between gap-6 overflow-hidden px-0.5 pb-[18px] pt-[3px] max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-[13px]")
-            div(className="hidden")
-              span(className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.09em] text-brand")
-                Icon(name="sparkles")
-                | Smart workspace
-              h1(className="mb-0 mt-[7px] text-[clamp(25px,3vw,32px)] leading-none tracking-[-0.045em]") #{activeCategory === 'All' ? 'All files' : activeCategory}
-              p(className="mb-0 mt-[9px] text-[11.5px] text-muted-foreground") Your local library, classified and ready when you need it.
-            div(className="hidden _flex items-center gap-2 max-[620px]:w-full [&>span]:grid [&>span]:min-w-[74px] [&>span]:gap-0.5 [&>span]:rounded-[10px] [&>span]:border [&>span]:border-sidebar-border [&>span]:bg-surface/70 [&>span]:px-3 [&>span]:py-[9px] [&>span]:text-right [&>span]:text-[9.5px] [&>span]:text-muted-foreground max-[620px]:[&>span]:flex-1 max-[620px]:[&>span]:text-left [&_strong]:text-sm [&_strong]:text-foreground" aria-label="Library summary")
-              span
-                strong #{filteredLibrary.length}
-                | files
-              span
-                strong #{categoryCounts.size}
-                | folders
-
-        DropZone(
-          ~ isDragging={isDragging}
-          ~ setIsDragging={setIsDragging}
-          ~ isExpanded={isDropZoneExpanded}
-          ~ onExpandedChange={setIsDropZoneExpanded}
-          ~ addFiles={addFiles}
-          ~ fileInputRef={fileInputRef}
-          ~ )
-
-        div(
-          ~ className={[
-          ~   'grid min-h-0 transition-[grid-template-rows,opacity,transform,visibility] ease-[cubic-bezier(0.22,1,0.36,1)]',
-          ~   isDropZoneExpanded
-          ~     ? 'invisible grid-rows-[minmax(0,0fr)] translate-y-[34px] opacity-0 [transition-duration:560ms,200ms,420ms,0s] [transition-delay:0s,0s,0s,560ms]'
-          ~     : 'visible grid-rows-[minmax(0,1fr)] translate-y-0 opacity-100 [transition-duration:560ms,220ms,420ms,0s] [transition-delay:0s,0s,0s,0s]'
-          ~ ]}
-          ~ aria-hidden={isDropZoneExpanded}
-          ~ inert={isDropZoneExpanded}
-          ~ )
-          div(className="min-h-0 overflow-hidden dark:h-full")
-            Library(
-              ~ filteredLibrary={filteredLibrary}
-              ~ categoryCounts={categoryCounts}
-              ~ activeCategory={activeCategory}
-              ~ setActiveCategory={selectCategory}
-              ~ search={search}
-              ~ deleteFile={deleteStoredFile}
-              ~ selectedFileId={selectedFileId}
-              ~ selectFile={(id) => setSelectedFileId(id)}
-              ~ onAddFiles={() => fileInputRef.current?.click()}
-              ~ )
-
-    if selectedFile
-      try
-        LazyFileDetails(file={selectedFile} onClose={() => setSelectedFileId(null)} deleteFile={deleteStoredFile})
-      pending
-        EmptyFileDetails
-      catch error
-        FileDetailsLoadError
-    else
-      EmptyFileDetails
-
-  if queue.length > 0
+    div.workspace-content
+      header.workspace-heading(className='hidden md:flex')
+      if notice
+        div.notice(role="alert" className="bg-red-400")
+          Icon(name="alert-fill" size={18})
+          span #{notice}
+          button.icon-button(type="button" onClick={() => setNotice('')} aria-label="Dismiss message")
+            Icon(name="close")
+      DropZone(isDragging={isDragging} setIsDragging={setIsDragging} addFiles={addFiles} fileInputRef={fileInputRef} onAddFiles={() => void openFilePicker()} language={language} setLanguage={setLanguage})
+      div(className="h-6 1/4 drop-lines grayscale opacity-20!")
+      Library(filteredLibrary={filteredLibrary} categoryCounts={categoryCounts} activeCategory={activeCategory} setActiveCategory={selectCategory} search={search} selectedFileId={selectedFileId} selectFile={selectFile} onAddFiles={() => void openFilePicker()} loading={loading || searchBusy} onRefresh={() => { if (getCurrentUser()) { setLoading(true); void refreshLibrary(new AbortController()); } }})
+  span.sr-only(role="status" aria-live="polite" aria-atomic="true") #{announcement}
+  if selectedFile
     try
-      LazyQueue(
-        ~ queue={queue}
-        ~ activeQueueCount={activeQueueCount}
-        ~ removeItem={removeQueueItem}
-        ~ retryItem={retryItem}
-        ~ isOpen={isQueueOpen}
-        ~ onClose={closeQueueSheet}
-        ~ )
+      LazyFileDetails(files={previewFiles} onSelect={selectFile} file={selectedFile} onClose={() => setSelectedFileId(null)} deleteFile={deleteStoredFile} onUpdate={updateStoredFile})
     pending
-      span.sr-only(role="status") Preparing upload queue…
-    catch error
-      div(className="fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-lg border border-destructive/20 bg-surface px-4 py-2 text-[10px] text-destructive shadow-lg" role="alert") Upload queue unavailable. Add the files again to retry.
+      div.preview-loading(role="status")
+        Icon(name="spinner-ring" size={22})
+        span Opening preview…
+    catch error, reset
+      div.notice.preview-loading(role="alert")
+        span File preview could not be opened.
+        button.button-secondary(type="button" onClick={reset}) Retry
+        button.icon-button(type="button" onClick={() => setSelectedFileId(null)} aria-label="Close preview")
+          Icon(name="close")
+  if queue.length > 0 || isQueueOpen
+    try
+      LazyQueue(queue={queue} activeQueueCount={activeQueueCount} removeItem={removeQueueItem} retryItem={retryItem} isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} onOpen={() => setIsQueueOpen(true)} onView={(id: string) => { selectFile(id); setIsQueueOpen(false); }} onClear={clearCompleted})
+    pending
+      span.sr-only(role="status") Preparing upload activity…
+    catch error, reset
+      div.notice.preview-loading(role="alert")
+        span Upload activity could not be shown.
+        button.button-secondary(type="button" onClick={reset}) Retry

@@ -1,0 +1,6 @@
+import SidebarNav from './SidebarNav.btsx'
+import type { WorkspaceNavigationProps } from '@/types/layout'
+
+props { navigation, onNavigate }: { navigation: WorkspaceNavigationProps; onNavigate: VoidFunction }
+
+SidebarNav({...navigation} onNavigate={onNavigate})

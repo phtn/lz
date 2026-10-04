@@ -2,7 +2,7 @@ module
   "use strong";
   interface ThemeProviderProps { children: unknown }
 
-import { useCallback, useEffect, useMemo, useState } from 'octane'
+import { useEffect, useState } from 'octane'
 import { ThemeContext, type Theme } from '@/context/theme'
 
 props { children }: ThemeProviderProps
@@ -12,18 +12,18 @@ setup
     return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   });
 
-  const toggleTheme = useCallback(() => {
+  const toggleTheme = () => {
     setTheme((current) => current === 'dark' ? 'light' : 'dark');
-  }, []);
+  };
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
     root.style.colorScheme = theme;
-    window.localStorage.setItem('dropzone-theme', theme);
-  }, [theme]);
+    try { window.localStorage.setItem('dropzone-theme', theme); } catch { /* Private browsing may disable storage. */ }
+  });
 
-  const value = useMemo(() => ({ theme, setTheme, toggleTheme }), [theme, toggleTheme]);
+  const value = { theme, setTheme, toggleTheme };
 
-ThemeContext.Provider(value={value})
+ThemeContext(value={value})
   | #{children}

@@ -1,0 +1,52 @@
+module "use strong";
+
+import { useEffect, useRef, useState } from 'octane'
+import Sidebar from '@/components/Sidebar.btsx'
+import Topbar from '@/components/Topbar.btsx'
+import type { WorkspaceLayoutProps } from '@/types/layout'
+
+props { navigation, topbar, children }: WorkspaceLayoutProps
+setup
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window === 'undefined') return 200;
+    try {
+      const stored = Number(window.localStorage.getItem('dropzone-sidebar-width'));
+      return stored === 64 || (stored >= 200 && stored <= 300) ? stored : 200;
+    } catch { return 200; }
+  });
+  const expandedWidthRef = useRef(200);
+  const draggingRef = useRef(false);
+  const isCompact = sidebarWidth === 64;
+  const resize = (width: number) => {
+    const next = width < 132 ? 64 : Math.min(300, Math.max(200, Math.round(width)));
+    if (next !== 64) expandedWidthRef.current = next;
+    setSidebarWidth(next);
+  };
+  const toggleSidebar = () => {
+    if (!isCompact) expandedWidthRef.current = sidebarWidth;
+    setSidebarWidth(isCompact ? expandedWidthRef.current : 64);
+  };
+  useEffect(() => {
+    try { window.localStorage.setItem('dropzone-sidebar-width', String(sidebarWidth)); } catch { /* Layout remains usable without storage. */ }
+  });
+
+div.desktop-layout(style={{ '--sidebar-width': `${sidebarWidth}px` }})
+  Sidebar({...navigation} isCompact={isCompact} toggleSidebar={toggleSidebar})
+  div.sidebar-separator(
+    ~ role="separator"
+    ~ aria-label="Resize sidebar"
+    ~ aria-orientation="vertical"
+    ~ aria-valuemin={64}
+    ~ aria-valuemax={300}
+    ~ aria-valuenow={sidebarWidth}
+    ~ tabIndex={0}
+    ~ onPointerDown={(event) => { if (event.button !== 0) return; draggingRef.current = true; event.currentTarget.setPointerCapture(event.pointerId); event.currentTarget.focus(); }}
+    ~ onPointerMove={(event) => { if (draggingRef.current) resize(event.clientX - (event.currentTarget.parentElement?.getBoundingClientRect().left ?? 0)); }}
+    ~ onPointerUp={(event) => { draggingRef.current = false; event.currentTarget.releasePointerCapture(event.pointerId); }}
+    ~ onPointerCancel={() => { draggingRef.current = false; }}
+    ~ onKeyDown={(event) => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); resize(sidebarWidth + (event.key === 'ArrowLeft' ? (isCompact ? 0 : sidebarWidth === 200 ? -136 : -10) : isCompact ? 136 : 10)); } else if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); resize(event.key === 'Home' ? 64 : 300); } }}
+    ~ )
+  div.desktop-content
+    Topbar({...topbar})
+    main#workspace-main.workspace-main
+      | #{children}
