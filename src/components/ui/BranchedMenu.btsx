@@ -57,7 +57,7 @@ component ItemContent
     Icon(name={item.icon} size={18} className="-ml-0.5 -mt-px shrink-0")
   span(className="min-w-0 flex-1 truncate") #{item.label}
   if item.count !== undefined
-    small(className="ml-auto shrink-0 pr-1 font-mono text-2xs tabular-nums text-muted-foreground") #{item.count}
+    span(className="ml-auto shrink-0 pr-1 font-sans text-sm tabular-nums text-muted-foreground") #{item.count}
 
 component BranchedLeaf
   props { item, selected, isOpen, onSelect }: { item: NavItem; selected: boolean; isOpen: boolean; onSelect: VoidFunction }
@@ -216,8 +216,8 @@ else
           ~ )
           span(className="min-w-0 flex-1") #{item.title}
           if item.count !== undefined
-            small(className="ml-auto shrink-0 pr-1 font-mono text-2xs tabular-nums text-muted-foreground") #{item.count}
-          Icon(name="chevron-down" size={12} className={cn('shrink-0 opacity-50 transition-transform duration-200 motion-reduce:transition-none', !open.has(i) && '-rotate-90')})
+            span(className="ml-auto shrink-0 pr-1 font-sans text-sm tabular-nums text-muted-foreground") #{item.count}
+          // Icon(name="chevron-down" size={12} className={cn('shrink-0 opacity-50 transition-transform duration-200 motion-reduce:transition-none', !open.has(i) && '-rotate-90')})
 
         if item.items
           div(className="grid [grid-template-rows:0fr] [transition:grid-template-rows_var(--bm-fold)_cubic-bezier(0.23,1,0.32,1)] group-data-[open]/section:[grid-template-rows:1fr] motion-reduce:transition-none" id={`${menuId}-group-${i}`} aria-hidden={!open.has(i)} inert={!open.has(i)})

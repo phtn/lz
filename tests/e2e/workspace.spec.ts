@@ -63,6 +63,9 @@ test('signed-in desktop library, preview controls, extracted text, and folder co
   await page.screenshot({ path: 'test-results/desktop-light.png' })
   await page.getByRole('button', { name: /Preview travel-photo/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
+  const dialogBounds = await page.getByRole('dialog').boundingBox()
+  expect(Math.abs(dialogBounds!.x + dialogBounds!.width / 2 - 720)).toBeLessThanOrEqual(1)
+  expect(Math.abs(dialogBounds!.y + dialogBounds!.height / 2 - 480)).toBeLessThanOrEqual(1)
   await expect(page.locator('.preview-image')).toBeVisible()
   await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
   await expect(page.locator('.zoom-value')).toHaveText('125%')
@@ -99,6 +102,21 @@ test('mobile layouts in both themes stay within the viewport and preview remains
       await expect(page.locator('html')).toHaveClass(/dark/)
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+    const gridToggle = page.getByRole('button', { name: 'Grid view', exact: true })
+    const listToggle = page.getByRole('button', { name: 'List view', exact: true })
+    const gridBounds = (await gridToggle.boundingBox())!
+    const listBounds = (await listToggle.boundingBox())!
+    expect(gridBounds.height).toBe(44)
+    expect(listBounds.height).toBe(gridBounds.height)
+    expect(listBounds.y).toBe(gridBounds.y)
+    await listToggle.click()
+    await expect(listToggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(gridToggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(page.locator('.file-collection')).toHaveClass(/file-list/)
+    await gridToggle.click()
+    await expect(gridToggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(listToggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(page.locator('.file-collection')).toHaveClass(/file-grid/)
     await page.locator('.workspace-main').evaluate((element) => { element.scrollTop = 0 })
     await page.screenshot({ path: `test-results/mobile-${dark ? 'dark' : 'light'}.png`, animations: 'disabled' })
     await page.getByRole('button', { name: /Preview travel-photo/ }).click()
@@ -110,6 +128,27 @@ test('mobile layouts in both themes stay within the viewport and preview remains
   }
   await page.reload()
   await expect(page.getByRole('button', { name: 'Switch to light mode' })).toBeVisible()
+})
+
+test('small phones and landscape previews fill the viewport without clipping controls', async ({ page }) => {
+  await mockWorkspace(page)
+  for (const viewport of [{ width: 320, height: 640 }, { width: 574, height: 844 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: /Preview travel-photo/ })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width)
+    await page.getByRole('button', { name: /Preview travel-photo/ }).click()
+    const dialog = page.locator('.file-dialog')
+    await expect(dialog).toBeVisible()
+    const bounds = await dialog.boundingBox()
+    expect(bounds!.x).toBe(0)
+    expect(bounds!.y).toBe(0)
+    expect(bounds!.width).toBe(viewport.width)
+    expect(bounds!.height).toBe(viewport.height)
+    expect(await dialog.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(viewport.width)
+    await page.getByRole('button', { name: 'Close file preview' }).click()
+    await expect(dialog).not.toBeVisible()
+  }
 })
 
 test('refresh is cancellable and signing out clears account files immediately', async ({ page }) => {

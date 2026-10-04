@@ -14,7 +14,7 @@ setup
 div.mobile-layout
   Topbar({...topbar} isMobile onOpenNavigation={() => setMobileNavOpen(true)} navigationOpen={mobileNavOpen})
   main#workspace-main.workspace-main
-    div.workspace-search(className='hidden md:flex')
+    div.workspace-search
       SearchField(search={topbar.search} setSearch={topbar.setSearch} searchInputRef={topbar.searchInputRef})
     | #{children}
   div.mobile-nav-swipe-area(aria-hidden="true" onTouchStart={(event) => { touchStartRef.current = event.touches[0]?.clientX ?? 0; }} onTouchEnd={(event) => { if (touchStartRef.current - (event.changedTouches[0]?.clientX ?? touchStartRef.current) > 60) setMobileNavOpen(true); }})

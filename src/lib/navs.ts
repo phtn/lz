@@ -1,6 +1,6 @@
+import { CATEGORY_GROUPS, CATEGORY_NAMES, SHOW_EMPTY_FOLDERS } from '@/constants/meta'
 import type { IconName } from '@/lib/icons'
 import type { CategoryName } from '@/types/file'
-import { CATEGORY_GROUPS, CATEGORY_NAMES, SHOW_EMPTY_FOLDERS } from '@/constants/meta'
 
 export type NavItem = {
   // Items without an href select a workspace view instead of navigating a route.
@@ -43,7 +43,13 @@ export const navGroups: NavGroup[] = [
     title: 'Workspace',
     items: [
       { value: 'All', icon: 'files', label: 'All files', tags: ['library', 'all files'], className: 'sidebar-link' },
-      { value: 'upload-activity', icon: 'upload', label: 'Upload activity', tags: ['upload', 'queue'], className: 'sidebar-link' }
+      {
+        value: 'upload-activity',
+        icon: 'upload',
+        label: 'Activity',
+        tags: ['upload', 'queue'],
+        className: 'sidebar-link'
+      }
     ]
   },
   ...branches
@@ -53,13 +59,28 @@ export function getFolderCategory(value: string): Exclude<CategoryName, 'All'> |
   return CATEGORY_NAMES.find((category) => category === value)
 }
 
-export function getWorkspaceNavGroups(categoryCounts: ReadonlyMap<CategoryName, number>, fileCount: number, activeQueueCount: number): NavGroup[] {
-  return navGroups.map((group, index) => {
-    const items = group.items.map((item) => {
-      const category = getFolderCategory(item.value)
-      const count = item.value === 'All' ? fileCount : item.value === 'upload-activity' ? activeQueueCount : category ? categoryCounts.get(category) ?? 0 : 0
-      return { ...item, count }
-    }).filter((item) => index === 0 || SHOW_EMPTY_FOLDERS || item.count > 0)
-    return { ...group, items, count: index === 0 ? undefined : items.reduce((sum, item) => sum + item.count, 0) }
-  }).filter((group) => group.items.length > 0)
+export function getWorkspaceNavGroups(
+  categoryCounts: ReadonlyMap<CategoryName, number>,
+  fileCount: number,
+  activeQueueCount: number
+): NavGroup[] {
+  return navGroups
+    .map((group, index) => {
+      const items = group.items
+        .map((item) => {
+          const category = getFolderCategory(item.value)
+          const count =
+            item.value === 'All'
+              ? fileCount
+              : item.value === 'upload-activity'
+                ? activeQueueCount
+                : category
+                  ? (categoryCounts.get(category) ?? 0)
+                  : 0
+          return { ...item, count }
+        })
+        .filter((item) => index === 0 || SHOW_EMPTY_FOLDERS || item.count > 0)
+      return { ...group, items, count: index === 0 ? undefined : items.reduce((sum, item) => sum + item.count, 0) }
+    })
+    .filter((group) => group.items.length > 0)
 }

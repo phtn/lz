@@ -1010,18 +1010,22 @@ select {
 }
 .view-toggle {
   display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 40px;
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 2px;
 }
 .view-toggle .icon-button {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
+  min-height: 0;
   border-radius: 6px;
 }
 .view-toggle .is-active {
   background: var(--muted);
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 .library-filters {
   display: flex;
@@ -1548,6 +1552,9 @@ select {
   box-shadow: var(--dialog-shadow);
 }
 .file-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
   width: min(1240px, calc(100vw - 64px));
   height: min(840px, calc(100dvh - 64px));
   max-width: none;
@@ -1574,6 +1581,7 @@ select {
   gap: 11px;
   padding: 15px 20px;
   border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
 }
 .preview-file-icon {
   color: var(--muted-foreground);
@@ -1597,6 +1605,7 @@ select {
 .preview-header-actions {
   display: flex;
   gap: 5px;
+  flex-shrink: 0;
 }
 .preview-body {
   display: grid;
@@ -2009,10 +2018,13 @@ svg:has(path):not(.no-spin) {
   }
   .library {
     margin-top: 19px;
+    height: auto;
   }
   .library-header {
     padding: 19px 14px 15px;
     gap: 7px;
+    flex-direction: column;
+    align-items: stretch;
   }
   .library-header h2 {
     font-size: 20px;
@@ -2021,7 +2033,9 @@ svg:has(path):not(.no-spin) {
     font-size: 8px;
   }
   .library-tools {
-    gap: 3px;
+    gap: 8px;
+    width: 100%;
+    justify-content: space-between;
   }
   .library-tools > .icon-button {
     display: none;
@@ -2029,10 +2043,14 @@ svg:has(path):not(.no-spin) {
   .sort-control select {
     font-size: 11px;
     width: 108px;
+    min-height: 50px;
+  }
+  .view-toggle {
+    height: 50px;
   }
   .view-toggle .icon-button {
-    width: 30px;
-    min-height: 40px;
+    width: 44px;
+    height: 44px;
   }
   .library-filters {
     display: block;
@@ -2216,8 +2234,8 @@ svg:has(path):not(.no-spin) {
   }
   .preview-main {
     flex-shrink: 0;
-    height: 66dvh;
-    min-height: 340px;
+    height: max(240px, 66dvh);
+    min-height: 0;
   }
   .preview-content {
     min-height: 0;
@@ -2235,6 +2253,8 @@ svg:has(path):not(.no-spin) {
   }
   .viewer-controls {
     min-height: 58px;
+    flex-wrap: wrap;
+    gap: 4px;
   }
   .preview-insights {
     overflow: visible;
@@ -2276,7 +2296,7 @@ svg:has(path):not(.no-spin) {
     flex: 1;
   }
   .view-toggle {
-    display: none;
+    display: flex;
   }
   .drop-features {
     gap: 8px;

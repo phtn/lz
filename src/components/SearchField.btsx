@@ -2,7 +2,7 @@ import type { WorkspaceTopbarProps } from '@/types/layout'
 import { Icon } from '@/lib/icons'
 
 props { search, setSearch, searchInputRef }: Pick<WorkspaceTopbarProps, 'search' | 'setSearch' | 'searchInputRef'>
-label.search-field(className='hidden md:flex')
+label.search-field
   Icon(name="search" size={18})
   input(ref={searchInputRef} type="search" value={search} onInput={(event) => setSearch(event.currentTarget.value)} placeholder="Search your files…" aria-label="Search your files")
   kbd ⌘ K
