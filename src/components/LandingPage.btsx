@@ -1,5 +1,6 @@
 module
   "use strong";
+  const dateToday = new Date().getDate();
   const examples = [
     { id: 'invoice', label: 'An invoice', name: 'Studio invoice.pdf', folder: 'Invoices', title: 'INVOICE', reference: 'INV / 2026 / 024', detail: 'Brand identity & design', amount: '$1,250.00', icon: 'finance' },
     { id: 'receipt', label: 'A receipt', name: 'Coffee receipt.jpg', folder: 'Receipts', title: 'RECEIPT', reference: 'ORDER / 00482', detail: 'Coffee & a little inspiration', amount: '$8.50', icon: 'receipt' },
@@ -89,7 +90,7 @@ div.landing-page
           | See how it works
           Icon(name="arrow-right" size={16})
       div.landing-portrait-scene
-        img.landing-portrait(src="/images/dropzone-hero-portrait.png" alt="" width={1024} height={1536} fetchPriority="high")
+        img.landing-portrait(src={`/images/${dateToday % 2 === 0 ? 'even' : 'odd' }.webp`} alt="" width={1024} height={1536} fetchPriority="high")
         div.landing-float-card.landing-float-folders
           div.landing-float-card-top
             span Smart folders
