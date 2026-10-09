@@ -68,14 +68,14 @@ div.landing-page
   main#landing-main.landing-middle
     section.landing-hero(aria-labelledby="landing-title")
       div.landing-hero-copy
-        p.landing-hero-badge
+        p.landing-hero-badge(className='hidden! md:flex! md:w-fit!')
           Icon(name="sparkle" size={16} className='rotate-3')
           | A little order, automatically
         h1#landing-title
           | Keep your files.
           br
           | Clear your mind.
-        p.landing-intro Every receipt, document, and little detail. Read, sorted, and ready to find in one calm workspace.
+        p.landing-intro 10Gb of FREE fast storage & smart workspace.
         div.landing-hero-actions
           StartButton(busy={busy} disabled={!authReady} onClick={() => void start()})
           div.landing-cta-note
@@ -84,8 +84,8 @@ div.landing-page
               Icon(name="images" size={16})
               Icon(name="audio" size={16})
               Icon(name="folder" size={16})
-            span A home for work & life
-        a.landing-text-link(href="#privacy")
+            span A space for work & life
+        a.landing-text-link(href="#privacy" className='hidden! md:flex!')
           | See how it works
           Icon(name="arrow-right" size={16})
       div.landing-portrait-scene
@@ -107,9 +107,9 @@ div.landing-page
             span On-device OCR
             Icon(name="shield-check" size={17})
           p Recognized in your browser
-          strong Your files.
+          strong your files.
             br
-            | Your space.
+            | your space.
           span.landing-float-status
             span.landing-dot(aria-hidden="true")
             | A little peace of mind

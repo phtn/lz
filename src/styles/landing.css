@@ -1086,7 +1086,7 @@
   box-shadow: 0 6px 18px #2529231a;
 }
 .landing-middle .landing-hero-copy > .landing-text-link {
-  margin-top: 21px;
+  margin-top: 10px;
   color: var(--landing-muted);
 }
 .landing-cta-note {
