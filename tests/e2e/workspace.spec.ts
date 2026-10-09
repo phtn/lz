@@ -529,6 +529,10 @@ test('mobile upload activity fits small screens with readable status colors', as
       await page.getByRole('dialog', { name: 'DropZone' }).getByRole('button', { name: 'Switch to dark mode' }).click()
       await page.keyboard.press('Escape')
     }
+    await expect.poll(async () => {
+      const bounds = (await panel.boundingBox())!;
+      return bounds.y + bounds.height;
+    }).toBeLessThanOrEqual(640)
     const bounds = (await panel.boundingBox())!
     expect(bounds.x).toBeGreaterThanOrEqual(0)
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(320)
@@ -625,9 +629,10 @@ test('upload call-chip follows real progress and completion', async ({ page }) =
   await expect(chip).toHaveAttribute('aria-busy', 'true')
   await expect(chip).toContainText('Uploading to the cloud')
   const bar = page.getByRole('progressbar')
+  await expect(bar).toHaveCount(0)
   await expect.poll(async () => {
     const fill = await chip.evaluate((node) => Number(node.querySelector<HTMLElement>(':scope > span')!.style.transform.match(/scaleX\(([^)]+)\)/)?.[1]))
-    const percentage = Number(await bar.getAttribute('aria-valuenow')) / 100
+    const percentage = Number((await chip.innerText()).match(/(\d+)%/)?.[1]) / 100
     return Math.abs(fill - percentage)
   }).toBeLessThanOrEqual(0.005)
   const bounds = (await chip.boundingBox())!
@@ -729,8 +734,39 @@ test('signed-out landing page explains the product and keeps account tools priva
   expect(errors).toEqual([])
 })
 
+test('mobile camera photos keep upload activity available when deferred scripts cannot load', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockWorkspace(page)
+  await page.goto('/')
+  await expect(page.locator('.file-card').first()).toBeVisible()
+  // A deployed tab may return from the camera after its old async assets have disappeared.
+  await page.route('**/static/js/async/*.js', (route) => route.abort())
+  let uploaded: File | undefined
+  await page.route('**/api/files', async (route) => {
+    const request = route.request()
+    if (request.method() !== 'POST') return route.fallback()
+    const form = await new Request(request.url(), { method: 'POST', headers: { 'content-type': request.headers()['content-type'] }, body: request.postDataBuffer()! }).formData()
+    uploaded = form.get('file') as File
+    return route.fulfill({ status: 201, json: { file: { ...files[0], id: 'camera-photo', name: uploaded.name } } })
+  })
+  const photo = await page.evaluate(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 100; canvas.height = 100
+    return canvas.toDataURL('image/jpeg').split(',')[1]
+  })
+  await page.locator('input[type=file]').setInputFiles({ name: 'IMG_20261010_120000.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') })
+  await expect(page.locator('.queue-panel')).toContainText('All filed. All ready.')
+  await expect(page.locator('.queue-call-chip')).toHaveAttribute('data-status', 'done')
+  await expect(page.getByText('Upload activity could not be shown.')).toHaveCount(0)
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  expect(uploaded?.name).toBe('IMG_20261010_120000.jpg')
+})
+
 test('recognizes a real image with the browser OCR worker', async ({ page }) => {
   test.setTimeout(90000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
   await mockWorkspace(page)
   await page.goto('/')
   await expect(page.getByRole('button', { name: /Preview travel-photo/ })).toBeVisible()
@@ -752,6 +788,10 @@ test('recognizes a real image with the browser OCR worker', async ({ page }) => 
   })
   await page.locator('input[type=file]').setInputFiles({ name: 'scanned-document.png', mimeType: 'image/png', buffer: Buffer.from(imageData, 'base64') })
   await expect(page.locator('.queue-panel')).toContainText('All filed. All ready.', { timeout: 75000 })
+  await expect(page.locator('.queue-thumbnail img')).toBeVisible()
+  await expect(page.locator('.queue-call-chip')).toHaveAttribute('data-status', 'done')
+  await expect(page.getByText('Upload activity could not be shown.')).toHaveCount(0)
+  expect(errors).toEqual([])
   expect(extracted?.get('method')).toBe('On-device OCR')
   expect(extracted?.get('thumbnail')).toBeInstanceOf(File)
   expect(String(extracted?.get('text'))).toContain('12345')

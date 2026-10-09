@@ -1506,22 +1506,6 @@ select {
   border-radius: inherit;
   transition: width 0.18s linear;
 }
-.progress-track .is-filing {
-  background: linear-gradient(90deg, var(--brand), color-mix(in srgb, var(--brand) 45%, white), var(--brand));
-  background-size: 200% 100%;
-  animation: shimmer 1.3s infinite;
-}
-.transfer-meta {
-  display: flex;
-  gap: 8px;
-  color: var(--muted-foreground);
-  font-size: 9px;
-  margin-top: 7px;
-  font-variant-numeric: tabular-nums;
-}
-.transfer-meta > span:last-child {
-  margin-left: auto;
-}
 .queue-item-actions {
   display: flex;
   align-items: center;
@@ -2627,13 +2611,9 @@ svg:has(path):not(.no-spin) {
   }
   .queue-item-status,
   .queue-error,
-  .queue-warning,
-  .transfer-meta {
+  .queue-warning {
     font-size: 12px;
     line-height: 1.5;
-  }
-  .transfer-meta {
-    flex-wrap: wrap;
   }
   .progress-track {
     height: 7px;

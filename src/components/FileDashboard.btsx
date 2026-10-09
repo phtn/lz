@@ -2,7 +2,6 @@ module
   "use strong";
   interface FileDashboardProps { initialLibrary?: StoredFile[] }
   const LazyFileDetails = lazy(() => import('./FileDetails.btsx'));
-  const LazyQueue = lazy(() => import('./Queue.btsx'));
 
 import { lazy, useEffect, useEffectEvent, useLinkedState, useRef, useState, useSyncExternalStore } from 'octane'
 import { authenticatedFetch, getCurrentUser, getServerAuthUser, subscribeToAuthState, signInWithGoogle } from '@/lib/firebase'
@@ -13,6 +12,7 @@ import { MAX_FILE_SIZE, SHOW_EMPTY_FOLDERS } from '@/constants/meta'
 import { analyzeFile } from '@/utils/ocr'
 import { createThumbnail } from '@/utils/thumbnail'
 import DropZone from './DropZone.btsx'
+import Queue from './Queue.btsx'
 import { Icon } from '@/lib/icons'
 import Library from './Library.btsx'
 import WorkspaceLayout from '@/layouts/WorkspaceLayout.btsx'
@@ -303,9 +303,7 @@ div.dashboard
           Icon(name="close")
   if queue.length > 0 || isQueueOpen
     try
-      LazyQueue(queue={queue} activeQueueCount={activeQueueCount} removeItem={removeQueueItem} retryItem={retryItem} isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} onOpen={() => setIsQueueOpen(true)} onView={(id: string) => { selectFile(id); setIsQueueOpen(false); }} onClear={clearCompleted})
-    pending
-      span.sr-only(role="status") Preparing upload activity…
+      Queue(queue={queue} activeQueueCount={activeQueueCount} removeItem={removeQueueItem} retryItem={retryItem} isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} onOpen={() => setIsQueueOpen(true)} onView={(id: string) => { selectFile(id); setIsQueueOpen(false); }} onClear={clearCompleted})
     catch error, reset
       div.notice.preview-loading(role="alert")
         span Upload activity could not be shown.

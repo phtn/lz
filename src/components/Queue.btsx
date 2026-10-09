@@ -13,7 +13,7 @@ module
   }
 import { STATUS_COPY } from '@/constants/meta'
 import type { QueueItem } from '@/types/file'
-import { formatBytes, getFileIcon } from '@/utils/helpers'
+import { getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
 import { Icon } from '@/lib/icons'
 import CallChip from './ui/call-chip.btsx'
@@ -52,6 +52,7 @@ if isOpen
                 ~ name={item.status === 'reading' || item.status === 'filing' ? item.detail ?? STATUS_COPY[item.status] : STATUS_COPY[item.status]}
                 ~ status={item.status === 'queued' ? 'idle' : item.status === 'done' ? 'done' : item.status === 'error' ? 'error' : 'running'}
                 ~ progress={item.progress}
+                ~ argument={item.status !== 'done' && item.status !== 'error' ? `${Math.round(item.progress)}%` : ''}
                 ~ expectedMs={180}
                 ~ size={36}
                 ~ showTimer={false}
@@ -64,15 +65,6 @@ if isOpen
                 ~ )
               if item.classification
                 CategoryPill(category={item.classification.category})
-            if item.status !== 'done' && item.status !== 'error'
-              div.queue-progress
-                div.progress-track(role="progressbar" aria-label={`${item.file.name}: ${STATUS_COPY[item.status]}`} aria-valuenow={Math.round(item.progress)} aria-valuemin={0} aria-valuemax={100})
-                  span(className={item.status === 'filing' ? 'is-filing' : ''} style={{ width: `${item.progress}%` }})
-                div.transfer-meta
-                  span #{item.status === 'uploading' ? `${formatBytes(item.uploadedBytes ?? 0)} / ${formatBytes(item.totalBytes ?? item.file.size)}` : formatBytes(item.file.size)}
-                  if item.status === 'uploading' && item.bytesPerSecond
-                    span #{formatBytes(item.bytesPerSecond)}/s
-                  span #{Math.round(item.progress)}%
             if item.error
               p.queue-error(role="alert") #{item.error}
             if item.status === 'done' && item.storedFile?.jev && ['review', 'unavailable', 'skipped'].includes(item.storedFile.jev.status)
