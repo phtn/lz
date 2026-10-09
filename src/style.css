@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @custom-variant dark (&:is(.dark *));
 @import './styles/smooth-reveal.css';
+@import './styles/landing.css';
 
 @font-face {
   font-family: 'OKX';

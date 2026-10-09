@@ -13,6 +13,7 @@ import { analyzeFile } from '@/utils/ocr'
 import { createThumbnail } from '@/utils/thumbnail'
 import DropZone from './DropZone.btsx'
 import { Icon } from '@/lib/icons'
+import { formatBytes } from '@/utils/helpers'
 import Library from './Library.btsx'
 import WorkspaceLayout from '@/layouts/WorkspaceLayout.btsx'
 
@@ -273,6 +274,8 @@ setup
       (!needle || searchResults.some((result) => result.id === file.id) || `${file.name} ${file.kind} ${file.category} ${file.excerpt}`.toLowerCase().includes(needle)));
   })();
   const activeQueueCount = queue.filter((item) => !['done', 'error'].includes(item.status)).length;
+  const totalBytes = library.reduce((total, file) => total + file.size, 0);
+  const firstName = currentUser?.displayName?.trim().split(/\s+/)[0] || 'friend';
   const selectedFile = library.find((file) => file.id === selectedFileId) ?? searchResults.find((file) => file.id === selectedFileId) ?? null;
 
   const previewFiles = selectedFile && !filteredLibrary.some((file) => file.id === selectedFile.id) ? [selectedFile, ...filteredLibrary] : filteredLibrary;
@@ -283,7 +286,30 @@ div.dashboard
     ~ topbar={{ search, setSearch, searchInputRef, onAddFiles: () => void openFilePicker() }}
     ~ )
     div.workspace-content
-      header.workspace-heading(className='hidden md:flex')
+      header.workspace-heading.workspace-welcome
+        div
+          p.eyebrow YOUR PERSONAL WORKSPACE
+          h2 Welcome back, #{firstName}.
+          p A little more order. A little less on your mind.
+        span.workspace-private
+          Icon(name="shield-check" size={16})
+          | Your private library
+      section.workspace-overview(aria-label="Library overview" aria-busy={loading})
+        article
+          Icon(name="files" size={23})
+          div
+            strong #{loading ? '—' : library.length}
+            span #{library.length === 1 ? 'File in your library' : 'Files in your library'}
+        article
+          Icon(name="folder" size={23})
+          div
+            strong #{loading ? '—' : categoryCounts.size}
+            span Smart folders used
+        article
+          Icon(name="cloud" size={23})
+          div
+            strong #{loading ? '—' : formatBytes(totalBytes)}
+            span Stored originals
       if notice
         div.notice(role="alert" className="bg-red-400")
           Icon(name="alert-fill" size={18})
@@ -291,7 +317,7 @@ div.dashboard
           button.icon-button(type="button" onClick={() => setNotice('')} aria-label="Dismiss message")
             Icon(name="close")
       DropZone(isDragging={isDragging} setIsDragging={setIsDragging} addFiles={addFiles} fileInputRef={fileInputRef} onAddFiles={() => void openFilePicker()} language={language} setLanguage={setLanguage})
-      div(className="h-6 1/4 drop-lines grayscale opacity-20!")
+      div.workspace-library-divider(aria-hidden="true")
       Library(filteredLibrary={filteredLibrary} categoryCounts={categoryCounts} activeCategory={activeCategory} setActiveCategory={selectCategory} search={search} selectedFileId={selectedFileId} selectFile={selectFile} onAddFiles={() => void openFilePicker()} loading={loading || searchBusy} onRefresh={() => { if (getCurrentUser()) { setLoading(true); void refreshLibrary(new AbortController()); } }})
   span.sr-only(role="status" aria-live="polite" aria-atomic="true") #{announcement}
   if selectedFile

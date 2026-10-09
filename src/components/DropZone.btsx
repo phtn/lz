@@ -11,7 +11,7 @@ module
   }
 
 import { useRef } from 'octane'
-import { OCR_LANGUAGES } from '@/constants/meta'
+import { CATEGORY_NAMES, OCR_LANGUAGES } from '@/constants/meta'
 import { Icon } from '@/lib/icons'
 
 props { isDragging, setIsDragging, addFiles, fileInputRef, onAddFiles, language, setLanguage }: DropZoneProps
@@ -40,7 +40,7 @@ section.upload-section(aria-label="Upload files")
           | On-device classification
         p(className='flex items-center gap-2')
           Icon(name="folder" size={16})
-          | 28 smart folders
+          | #{CATEGORY_NAMES.length} smart folders
     button.button-primary(type="button" onClick={onAddFiles} style="height: 36px" )
       Icon(name="add" size={18})
       span Choose files

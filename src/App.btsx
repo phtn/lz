@@ -1,8 +1,10 @@
 
 import '@/style.css'
-import { use } from 'octane'
+import { use, useSyncExternalStore } from 'octane'
 import { loadInitialState } from 'server'
+import LandingPage from '@/components/LandingPage.btsx'
 import FileDashboard from '@/components/FileDashboard.btsx'
+import { getAuthStateReady, getCurrentUser, getServerAuthStateReady, getServerAuthUser, subscribeToAuthState } from '@/lib/firebase'
 import {Icon} from '@/lib/icons'
 import ThemeProvider from '@/components/ThemeProvider.btsx'
 
@@ -19,12 +21,19 @@ module
   }
 
 component Dashboard
-  setup const initialState = use(loadInitialState());
+  setup
+    const initialState = use(loadInitialState());
+    const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
+    const ready = useSyncExternalStore(subscribeToAuthState, getAuthStateReady, getServerAuthStateReady);
   fragment
     meta(property="og:image" content={initialState.socialImage})
     meta(name="twitter:image" content={initialState.socialImage})
     ThemeProvider
-      FileDashboard(initialLibrary={initialState.library})
+      div.app-view
+        if ready && currentUser
+          FileDashboard(initialLibrary={initialState.library})
+        else
+          LandingPage(authReady={ready})
 
 fragment
   meta(

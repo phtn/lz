@@ -11,6 +11,7 @@ import type { WorkspaceTopbarProps } from '@/types/layout'
 import { getAuthStateReady, getCurrentUser, getServerAuthStateReady, getServerAuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
 import { Icon } from '@/lib/icons'
 import SearchField from './SearchField.btsx'
+import ThemeToggle from './ThemeToggle.btsx'
 
 
 props { search, setSearch, searchInputRef, onAddFiles, isMobile = false, onOpenNavigation, navigationOpen = false }: TopbarProps
@@ -30,13 +31,16 @@ setup
 
 header.topbar-header
   div.topbar
-    h1.topbar-title.smooth-reveal
+    h1.topbar-title
       span DropZone
       // a(href="/" aria-label="DropZone home")
     if !isMobile
       SearchField(search={search} setSearch={setSearch} searchInputRef={searchInputRef})
     div.topbar-actions
+      if isMobile
+        ThemeToggle
       button.account-button(type="button" disabled={busy || !ready} onClick={() => void handleAuthClick()} aria-label={currentUser ? 'Sign out' : 'Sign in with Google'} title={currentUser?.email ?? 'Sign in with Google'})
+        Icon(name="person" size={18} className="account-icon")
         span #{currentUser ? currentUser.displayName?.split(' ')[0] ?? 'Account' : 'Sign in'}
 
       if isMobile

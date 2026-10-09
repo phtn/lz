@@ -57,6 +57,9 @@ test('signed-in desktop library, preview controls, extracted text, and folder co
   await mockWorkspace(page)
   await page.goto('/')
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Welcome back, Alex.' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Library overview' })).toContainText('2Files in your library')
+  await expect(page.locator('.landing-page')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Preview travel-photo/ })).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCSS('height', '64px')
   await expect(page.locator('.topbar svg path').first()).toBeAttached()
@@ -171,9 +174,11 @@ test('refresh is cancellable and signing out clears account files immediately', 
   release()
   await expect(page.getByRole('button', { name: /Preview travel-photo/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible()
-  await expect(page.locator('.empty-library')).toBeVisible()
-  await expect(page.locator('.folder-link')).toHaveCount(28)
-  await expect(page.getByRole('combobox', { name: 'Choose a smart folder', includeHidden: true }).locator('option')).toHaveCount(29)
+  await expect(page.locator('.landing-page')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Keep your files. Clear your mind.' })).toBeVisible()
+  await expect.poll(() => page.locator('.landing-portrait').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
+  await expect(page.locator('.dashboard')).toHaveCount(0)
+  await expect(page.getByRole('searchbox')).toHaveCount(0)
 })
 
 test('all folders are available for palette review, including empty categories', async ({ page }) => {
@@ -396,7 +401,7 @@ test('uploads retain completion, can be reopened, and recover after an error', a
 })
 
 test('small phones and tablets have reachable search, categories, and theme controls', async ({ page }) => {
-  await mockWorkspace(page, false)
+  await mockWorkspace(page)
   await page.goto('/')
   for (const width of [320, 360, 574, 575, 768, 1024]) {
     await page.setViewportSize({ width, height: 900 })
@@ -413,6 +418,43 @@ test('small phones and tablets have reachable search, categories, and theme cont
   await page.setViewportSize({ width: 844, height: 390 })
   await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCSS('height', '64px')
+})
+
+test('signed-out landing page explains the product and keeps account tools private', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  let fileRequests = 0
+  page.on('request', (request) => { if (new URL(request.url()).pathname.startsWith('/api/files')) fileRequests++ })
+  await mockWorkspace(page, false)
+  await page.setViewportSize({ width: 1440, height: 960 })
+  await page.goto('/')
+  await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeEnabled()
+  await expect(page.getByRole('heading', { name: 'Keep your files. Clear your mind.' })).toBeVisible()
+  await expect(page.locator('.dashboard')).toHaveCount(0)
+  await expect(page.locator('input[type=file]')).toHaveCount(0)
+  await page.getByRole('button', { name: 'A receipt', exact: true }).click()
+  await expect(page.locator('.landing-demo-folder')).toContainText('Receipts')
+  await expect(page.getByRole('button', { name: 'A receipt', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'A travel document', exact: true }).click()
+  await expect(page.locator('.landing-demo-folder')).toContainText('Travel')
+  await page.screenshot({ path: 'test-results/landing-desktop-light.png', fullPage: true })
+  await page.getByRole('link', { name: 'See how it works' }).click()
+  await expect(page.getByRole('heading', { name: 'Three steps. Zero busywork.' })).toBeInViewport()
+  for (const width of [320, 390, 574, 768, 1024]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Switch to dark mode' })).toBeVisible()
+  }
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click()
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({ path: 'test-results/landing-mobile-dark.png', fullPage: true })
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Switch to light mode' })).toBeVisible()
+  expect(fileRequests).toBe(0)
+  expect(errors).toEqual([])
 })
 
 test('recognizes a real image with the browser OCR worker', async ({ page }) => {

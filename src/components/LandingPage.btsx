@@ -1,0 +1,235 @@
+module
+  "use strong";
+  const examples = [
+    { id: 'invoice', label: 'An invoice', name: 'Studio invoice.pdf', folder: 'Invoices', title: 'INVOICE', reference: 'INV / 2026 / 024', detail: 'Brand identity & design', amount: '$1,250.00', icon: 'finance' },
+    { id: 'receipt', label: 'A receipt', name: 'Coffee receipt.jpg', folder: 'Receipts', title: 'RECEIPT', reference: 'ORDER / 00482', detail: 'Coffee & a little inspiration', amount: '$8.50', icon: 'receipt' },
+    { id: 'travel', label: 'A travel document', name: 'Flight itinerary.pdf', folder: 'Travel', title: 'ITINERARY', reference: 'MNL → NRT', detail: 'Your next adventure', amount: '09:40 AM', icon: 'personal-record' }
+  ] as const;
+
+import { useState } from 'octane'
+import { signInWithGoogle } from '@/lib/firebase'
+import { Icon } from '@/lib/icons'
+import { CATEGORY_NAMES } from '@/constants/meta'
+import ThemeToggle from './ThemeToggle.btsx'
+
+component StartButton
+  props { busy, disabled, onClick, label = 'Get organized' }: { busy: boolean; disabled: boolean; onClick: VoidFunction; label?: string }
+  button.landing-button(type="button" disabled={disabled || busy} onClick={onClick} aria-busy={busy})
+    span #{busy ? 'Connecting…' : label}
+    Icon(name={busy ? 'spinner-ring' : 'arrow-right'} size={18} className={busy ? 'icon-spinning' : ''})
+
+props { authReady }: { authReady: boolean }
+setup
+  const [busy, setBusy] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [exampleIndex, setExampleIndex] = useState(0);
+  const example = examples[exampleIndex]!;
+  const start = async () => {
+    if (busy || !authReady) return;
+    setBusy(true); setAuthError('');
+    try { await signInWithGoogle(); }
+    catch (error) { setAuthError(error instanceof Error ? error.message : 'Sign-in could not be completed. Please try again.'); }
+    finally { setBusy(false); }
+  };
+
+div.landing-page
+  a.landing-skip(href="#landing-main") Skip to content
+  header.landing-nav
+    a.landing-brand(href="/" aria-label="DropZone home")
+      span.landing-logo(aria-hidden="true")
+        Icon(name="down" size={23})
+      span DropZone
+    nav.landing-links(aria-label="Main navigation")
+      a(href="#how-it-works") How it works
+      a(href="#features") The good stuff
+      a(href="#privacy") Your privacy
+    div.landing-nav-actions
+      ThemeToggle
+      button.landing-signin(type="button" onClick={() => void start()} disabled={!authReady || busy} aria-label="Sign in with Google") #{busy ? 'Connecting…' : 'Sign in'}
+  if authError
+    div.landing-auth-error(role="alert")
+      span #{authError}
+      button(type="button" onClick={() => setAuthError('')} aria-label="Dismiss sign-in error")
+        Icon(name="close" size={18})
+  main#landing-main.landing-middle
+    section.landing-hero(aria-labelledby="landing-title")
+      div.landing-hero-copy
+        p.landing-hero-badge
+          Icon(name="sparkle" size={16} className='rotate-3')
+          | A little order, automatically
+        h1#landing-title
+          | Keep your files.
+          br
+          | Clear your mind.
+        p.landing-intro Every receipt, document, and little detail. Read, sorted, and ready to find in one calm workspace.
+        div.landing-hero-actions
+          StartButton(busy={busy} disabled={!authReady} onClick={() => void start()})
+          div.landing-cta-note
+            span.landing-note-icons(aria-hidden="true")
+              Icon(name="file" size={16})
+              Icon(name="images" size={16})
+              Icon(name="audio" size={16})
+              Icon(name="folder" size={16})
+            span A home for work & life
+        a.landing-text-link(href="#privacy")
+          | See how it works
+          Icon(name="arrow-right" size={16})
+      div.landing-portrait-scene
+        img.landing-portrait(src="/images/dropzone-hero-portrait.png" alt="" width={1024} height={1536} fetchPriority="high")
+        div.landing-float-card.landing-float-folders
+          div.landing-float-card-top
+            span Smart folders
+            Icon(name="folder" size={17})
+          p Everything in its place
+          div.landing-mini-folders(aria-hidden="true")
+            span Work
+            span Life
+            span More
+          strong #{CATEGORY_NAMES.length}
+            small folders
+          Icon(name="check" size={17})
+        div.landing-float-card.landing-float-private
+          div.landing-float-card-top
+            span On-device OCR
+            Icon(name="shield-check" size={17})
+          p Recognized in your browser
+          strong Your files.
+            br
+            | Your space.
+          span.landing-float-status
+            span.landing-dot(aria-hidden="true")
+            | A little peace of mind
+    section.landing-product-section(aria-labelledby="product-preview-title")
+      div.landing-product-frame
+        div.landing-preview-rail(aria-hidden="true")
+          span.landing-preview-mark
+            Icon(name="down" size={23})
+          span.is-selected
+            Icon(name="grid" size={21})
+          span
+            Icon(name="folder" size={21})
+          span
+            Icon(name="clock" size={21})
+          span
+            Icon(name="cloud" size={21})
+        div.landing-preview-main
+          div.landing-preview-heading
+            div
+              p.landing-eyebrow EVERYTHING, A LITTLE MORE TOGETHER
+              h2#product-preview-title Your files. Already organized.
+              p
+                span.landing-dot(aria-hidden="true")
+                | A preview of a calmer workspace
+            span.landing-preview-add(aria-hidden="true")
+              Icon(name="add" size={24})
+          div.landing-preview-body
+            div.landing-preview-file
+              div.landing-preview-file-heading
+                Icon(name="file-pdf" size={21})
+                span #{example.name}
+                span.landing-preview-file-type EXAMPLE
+              div.landing-paper-stage(aria-hidden="true")
+                div.landing-paper
+                  div.landing-paper-heading
+                    span #{example.title}
+                    Icon(name="file" size={23})
+                  p.landing-paper-reference #{example.reference}
+                  div.landing-paper-lines
+                    span
+                    span
+                    span
+                  p.landing-paper-detail #{example.detail}
+                  strong.landing-paper-amount #{example.amount}
+                  div.landing-paper-bottom
+                    span THANK YOU
+                    span.landing-barcode
+              div.landing-preview-file-footer
+                Icon(name="check" size={16})
+                | Read. Recognized. Ready.
+            div.landing-preview-organizer
+              div.landing-preview-search
+                Icon(name="search" size={19})
+                span Find a file, or a detail inside it…
+                kbd ⌘ K
+              div.landing-demo(aria-label="Interactive example of automatic file organization")
+                div.landing-demo-folder(aria-live="polite" aria-atomic="true")
+                  span.landing-folder-icon
+                    Icon(name="folder" size={29})
+                  div
+                    small SORTED INTO
+                    strong #{example.folder}
+                  Icon(name="check" size={19})
+                p.landing-preview-excerpt #{example.detail}
+                div.landing-demo-controls(role="group" aria-label="Choose an example document")
+                  each item, index in examples key item.id
+                    button(type="button" aria-pressed={exampleIndex === index} onClick={() => setExampleIndex(index)}) #{item.label}
+              div.landing-preview-folder-row(aria-hidden="true")
+                span
+                  Icon(name="finance" size={20})
+                  | Invoices
+                span
+                  Icon(name="personal-record" size={20})
+                  | Travel
+                span
+                  Icon(name="receipt" size={20})
+                  | Receipts
+      p.landing-preview-caption An example workspace. Sign in to make it yours.
+    section#how-it-works.landing-workflow.hidden(aria-labelledby="workflow-title")
+      div.landing-section-heading
+        div
+          p.landing-eyebrow FROM PILE TO PEACE OF MIND
+          h2#workflow-title Three steps. Zero busywork.
+        p The invoice, the scan, the screenshot. Let it all land, and let your workspace take shape.
+      div.landing-steps
+        article
+          div.landing-step-top
+            span 01 / DROP
+            Icon(name="upload" size={24})
+          h3 Let it all land.
+          p Add your files together, up to 20 MB each. PDFs, photos, documents, spreadsheets, and more.
+        article
+          div.landing-step-top
+            span 02 / SORT
+            Icon(name="sparkles" size={24})
+          h3 Order finds a way.
+          p On-device text recognition reads your documents. Smart classification suggests the right folder.
+        article
+          div.landing-step-top
+            span 03 / FIND
+            Icon(name="search" size={24})
+          h3 There when you need it.
+          p Search filenames and extracted text, preview your originals, and find your files across devices.
+    section#features.landing-features(aria-labelledby="features-title")
+      div.landing-section-heading
+        div
+          p.landing-eyebrow A WORKSPACE THAT DOES THE WORK
+          h2#features-title More room for the everyday.
+      div.landing-feature-grid
+        article
+          Icon(name="folder" size={30})
+          h3 A place for everything.
+          p #{CATEGORY_NAMES.length} smart folders for work, life, and everything between. Review a suggestion and move a file whenever you need to.
+        article
+          Icon(name="search" size={30})
+          h3 Find it in the details.
+          p Remember an invoice number or a line of text? Search inside your documents, then preview the original.
+    section#privacy.landing-privacy(aria-labelledby="privacy-title")
+      span.landing-privacy-icon
+        Icon(name="shield-check" size={48})
+      div
+        p.landing-eyebrow YOUR FILES. YOUR SPACE.
+        h2#privacy-title Private by design. Clear by default.
+        p Text recognition runs in your browser. After you sign in, your originals and extracted text are saved to your account. Cloud classification helps check the suggested folder.
+      a.landing-text-link(href="#how-it-works") Explore the workflow
+    section.landing-final-cta(aria-labelledby="cta-title")
+      p.landing-eyebrow MAKE ROOM FOR WHAT MATTERS
+      h2#cta-title A fresh start for your files.
+      p Less searching. Less sorting. A little more breathing room.
+      StartButton(busy={busy} disabled={!authReady} onClick={() => void start()} label="Start with Google")
+  footer.landing-footer
+    a.landing-brand(href="/" aria-label="DropZone home")
+      span.landing-logo(aria-hidden="true")
+        Icon(name="down" size={20})
+      span DropZone
+    p Drop it. Find your calm.
+    a(href="#landing-main") Back to top ↑
