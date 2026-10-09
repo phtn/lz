@@ -18,34 +18,34 @@
     "icons:check": "bun scripts/build-icons.ts --svg src/lib/icons/svg --out src/lib/icons/icons.ts --check"
   },
   "dependencies": {
-    "@octanejs/adapter-cloudflare": "0.0.53",
-    "@octanejs/base-ui": "0.1.59",
-    "@octanejs/lucide": "0.1.53",
-    "@octanejs/rsbuild-plugin": "0.1.58",
-    "@octanejs/tanstack-router": "^0.2.0",
-    "beast-tsrx": "0.7.1",
+    "@octanejs/adapter-cloudflare": "0.0.57",
+    "@octanejs/base-ui": "0.1.64",
+    "@octanejs/lucide": "0.1.57",
+    "@octanejs/rsbuild-plugin": "0.1.62",
+    "@octanejs/tanstack-router": "^0.2.5",
+    "beast-tsrx": "0.8.0",
     "clsx": "^2.1.1",
     "convex": "^1.46.0",
     "fflate": "^0.8.2",
-    "firebase": "^12.19.0",
-    "octane": "0.8.0",
+    "firebase": "^13.0.0",
+    "octane": "0.11.0",
     "pdfjs-dist": "^6.4.299",
     "tailwind-merge": "^3.7.0",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
-    "@beastjs/devtools": "^0.1.16",
-    "@cloudflare/workers-types": "^5.20261003.1",
-    "@playwright/test": "^1.63.0",
-    "@rsbuild/core": "^2.2.11",
+    "@beastjs/devtools": "^0.1.21",
+    "@cloudflare/workers-types": "^5.20261008.1",
+    "@playwright/test": "^1.64.0",
+    "@rsbuild/core": "^2.2.12",
     "@tailwindcss/postcss": "^4.3.3",
-    "@tsrx/typescript-plugin": "0.6.1",
+    "@tsrx/typescript-plugin": "0.6.3",
     "@types/node": "^26.6.4",
     "convex-test": "^0.0.60",
     "svgo": "^4.1.0",
     "tailwindcss": "^4.1.8",
     "typescript": "5.9.3",
     "vitest": "^5.0.3",
-    "wrangler": "^4.147.0"
+    "wrangler": "^4.149.0"
   }
 }

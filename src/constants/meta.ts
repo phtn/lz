@@ -1,5 +1,5 @@
-import type { CategoryName, CategoryRule, QueueStatus } from '@/types/file'
 import type { IconName } from '@/lib/icons'
+import type { CategoryName, CategoryRule, QueueStatus } from '@/types/file'
 
 // Temporarily expose empty folders while reviewing the category palette.
 export const SHOW_EMPTY_FOLDERS = true
@@ -22,7 +22,17 @@ export const CATEGORY_NAMES: Exclude<CategoryName, 'All'>[] = [
   'Images',
   'Archives',
   'Media',
-  'Code', 'Invoices', 'Taxes', 'Banking', 'Employment', 'Property', 'Research', 'Design', 'Emails', 'Audio', 'Video'
+  'Code',
+  'Invoices',
+  'Taxes',
+  'Banking',
+  'Employment',
+  'Property',
+  'Research',
+  'Design',
+  'Emails',
+  'Audio',
+  'Video'
 ]
 
 export const CATEGORY_META: Record<CategoryName, { color: string; background: string; iconClass: string }> = {
@@ -58,21 +68,112 @@ export const CATEGORY_META: Record<CategoryName, { color: string; background: st
 }
 
 export const TEXT_EXTENSIONS = new Set([
-  'txt', 'md', 'csv', 'tsv', 'json', 'xml', 'yaml', 'yml', 'html', 'htm', 'log', 'rtf',
-  'js', 'jsx', 'ts', 'tsx', 'css', 'scss', 'less', 'py', 'rb', 'go', 'rs', 'java', 'kt',
-  'c', 'h', 'cpp', 'hpp', 'cs', 'php', 'sh', 'sql', 'btsx', 'tsrx', 'gleam', 'toml', 'ini', 'svelte', 'vue', 'swift', 'dart', 'ex', 'exs', 'ipynb'
+  'txt',
+  'md',
+  'csv',
+  'tsv',
+  'json',
+  'xml',
+  'yaml',
+  'yml',
+  'html',
+  'htm',
+  'log',
+  'rtf',
+  'js',
+  'jsx',
+  'ts',
+  'tsx',
+  'css',
+  'scss',
+  'less',
+  'py',
+  'rb',
+  'go',
+  'rs',
+  'java',
+  'kt',
+  'c',
+  'h',
+  'cpp',
+  'hpp',
+  'cs',
+  'php',
+  'sh',
+  'sql',
+  'btsx',
+  'tsrx',
+  'gleam',
+  'toml',
+  'ini',
+  'svelte',
+  'vue',
+  'swift',
+  'dart',
+  'ex',
+  'exs',
+  'ipynb'
 ])
 
 const SPREADSHEET_EXTENSIONS = new Set(['csv', 'tsv', 'xls', 'xlsx', 'ods', 'numbers'])
 const PRESENTATION_EXTENSIONS = new Set(['ppt', 'pptx', 'odp', 'key'])
 const DOCUMENT_EXTENSIONS = new Set(['doc', 'docx', 'odt', 'rtf', 'txt', 'md', 'pages', 'epub', 'mobi'])
-const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'svg', 'bmp', 'tif', 'tiff', 'avif'])
+const IMAGE_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'webp',
+  'heic',
+  'heif',
+  'svg',
+  'bmp',
+  'tif',
+  'tiff',
+  'avif'
+])
 const ARCHIVE_EXTENSIONS = new Set(['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'tgz'])
 const MEDIA_EXTENSIONS = new Set(['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'])
 const CODE_EXTENSIONS = new Set([
-  'js', 'jsx', 'ts', 'tsx', 'css', 'scss', 'less', 'html', 'htm', 'json', 'xml', 'yaml',
-  'yml', 'py', 'rb', 'go', 'rs', 'java', 'kt', 'c', 'h', 'cpp', 'hpp', 'cs', 'php',
-  'sh', 'sql', 'btsx', 'tsrx', 'gleam', 'toml', 'ini', 'svelte', 'vue', 'swift', 'dart', 'ex', 'exs', 'ipynb'
+  'js',
+  'jsx',
+  'ts',
+  'tsx',
+  'css',
+  'scss',
+  'less',
+  'html',
+  'htm',
+  'json',
+  'xml',
+  'yaml',
+  'yml',
+  'py',
+  'rb',
+  'go',
+  'rs',
+  'java',
+  'kt',
+  'c',
+  'h',
+  'cpp',
+  'hpp',
+  'cs',
+  'php',
+  'sh',
+  'sql',
+  'btsx',
+  'tsrx',
+  'gleam',
+  'toml',
+  'ini',
+  'svelte',
+  'vue',
+  'swift',
+  'dart',
+  'ex',
+  'exs',
+  'ipynb'
 ])
 
 export function categoryFromFileType(name: string, mimeType: string): Exclude<CategoryName, 'All'> {
@@ -84,22 +185,49 @@ export function categoryFromFileType(name: string, mimeType: string): Exclude<Ca
   if (SPREADSHEET_EXTENSIONS.has(extension) || /spreadsheet|excel|csv/.test(mime)) return 'Spreadsheets'
   if (PRESENTATION_EXTENSIONS.has(extension) || /presentation|powerpoint/.test(mime)) return 'Presentations'
   if (ARCHIVE_EXTENSIONS.has(extension) || /zip|compressed|archive|tar/.test(mime)) return 'Archives'
-  if (mime.startsWith('audio/') || ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'opus'].includes(extension)) return 'Audio'
+  if (mime.startsWith('audio/') || ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'opus'].includes(extension))
+    return 'Audio'
   if (mime.startsWith('video/') || ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'].includes(extension)) return 'Video'
   if (['eml', 'msg'].includes(extension)) return 'Emails'
   if (['psd', 'ai', 'eps', 'sketch', 'fig', 'xd', 'indd', 'blend', 'dwg', 'dxf'].includes(extension)) return 'Design'
   if (MEDIA_EXTENSIONS.has(extension)) return 'Media'
   if (CODE_EXTENSIONS.has(extension)) return 'Code'
-  if (DOCUMENT_EXTENSIONS.has(extension) || mime.startsWith('text/') || /word|document|ebook/.test(mime)) return 'Documents'
+  if (DOCUMENT_EXTENSIONS.has(extension) || mime.startsWith('text/') || /word|document|ebook/.test(mime))
+    return 'Documents'
   return 'Documents'
 }
 
 export const CATEGORY_RULES: CategoryRule[] = [
-  { category: 'Taxes', kind: 'Tax document', strongTerms: /\b(tax return|tax form|withholding tax|income tax|bir form|w[ -]?2|1099|itr)\b/gi, terms: /\b(taxpayer|taxable|deduction|fiscal year|assessment)\b/gi },
-  { category: 'Property', kind: 'Property record', strongTerms: /\b(property deed|land title|real estate|mortgage|tenancy agreement|property tax|lease agreement)\b/gi, terms: /\b(landlord|tenant|parcel|property|rent|premises)\b/gi },
-  { category: 'Research', kind: 'Research paper', strongTerms: /\b(research paper|abstract|literature review|methodology|peer reviewed|doi)\b/gi, terms: /\b(hypothesis|findings|bibliography|citations|experiment|research)\b/gi },
-  { category: 'Design', kind: 'Creative brief', strongTerms: /\b(creative brief|brand guidelines|design system|moodboard|wireframe|style guide)\b/gi, terms: /\b(typography|palette|logo|branding|artwork|design)\b/gi },
-  { category: 'Finance', kind: 'Financial report', strongTerms: /\b(financial report|balance sheet|income statement|profit and loss|cash flow)\b/gi, terms: /\b(assets|liabilities|equity|revenue|expenses)\b/gi },
+  {
+    category: 'Taxes',
+    kind: 'Tax document',
+    strongTerms: /\b(tax return|tax form|withholding tax|income tax|bir form|w[ -]?2|1099|itr)\b/gi,
+    terms: /\b(taxpayer|taxable|deduction|fiscal year|assessment)\b/gi
+  },
+  {
+    category: 'Property',
+    kind: 'Property record',
+    strongTerms: /\b(property deed|land title|real estate|mortgage|tenancy agreement|property tax|lease agreement)\b/gi,
+    terms: /\b(landlord|tenant|parcel|property|rent|premises)\b/gi
+  },
+  {
+    category: 'Research',
+    kind: 'Research paper',
+    strongTerms: /\b(research paper|abstract|literature review|methodology|peer reviewed|doi)\b/gi,
+    terms: /\b(hypothesis|findings|bibliography|citations|experiment|research)\b/gi
+  },
+  {
+    category: 'Design',
+    kind: 'Creative brief',
+    strongTerms: /\b(creative brief|brand guidelines|design system|moodboard|wireframe|style guide)\b/gi,
+    terms: /\b(typography|palette|logo|branding|artwork|design)\b/gi
+  },
+  {
+    category: 'Finance',
+    kind: 'Financial report',
+    strongTerms: /\b(financial report|balance sheet|income statement|profit and loss|cash flow)\b/gi,
+    terms: /\b(assets|liabilities|equity|revenue|expenses)\b/gi
+  },
   {
     category: 'Receipts',
     kind: 'Receipt',
@@ -127,7 +255,8 @@ export const CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Legal',
     kind: 'Contract or legal document',
-    strongTerms: /\b(agreement|contract|affidavit|deed|lease agreement|power of attorney|non-disclosure agreement|terms and conditions)\b/gi,
+    strongTerms:
+      /\b(agreement|contract|affidavit|deed|lease agreement|power of attorney|non-disclosure agreement|terms and conditions)\b/gi,
     terms: /\b(party|hereby|witnesseth|liability|confidential|governing law|signature|executed)\b/gi
   },
   {
@@ -139,13 +268,15 @@ export const CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Medical',
     kind: 'Medical record',
-    strongTerms: /\b(prescription|medical record|laboratory result|lab result|discharge summary|diagnosis|radiology)\b/gi,
+    strongTerms:
+      /\b(prescription|medical record|laboratory result|lab result|discharge summary|diagnosis|radiology)\b/gi,
     terms: /\b(patient|physician|doctor|clinic|hospital|dosage|medication|specimen|treatment|symptoms)\b/gi
   },
   {
     category: 'Travel',
     kind: 'Travel document',
-    strongTerms: /\b(boarding pass|flight itinerary|booking confirmation|hotel reservation|e-ticket|travel itinerary)\b/gi,
+    strongTerms:
+      /\b(boarding pass|flight itinerary|booking confirmation|hotel reservation|e-ticket|travel itinerary)\b/gi,
     terms: /\b(flight|booking|reservation|departure|arrival|hotel|itinerary|gate|seat|passenger|check-in)\b/gi
   },
   {
@@ -157,7 +288,8 @@ export const CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Work',
     kind: 'Work document',
-    strongTerms: /\b(project proposal|meeting minutes|meeting agenda|quarterly report|business plan|statement of work)\b/gi,
+    strongTerms:
+      /\b(project proposal|meeting minutes|meeting agenda|quarterly report|business plan|statement of work)\b/gi,
     terms: /\b(project|proposal|meeting|agenda|minutes|quarterly|client|deliverable|roadmap|report|deadline)\b/gi
   },
   {
@@ -169,7 +301,8 @@ export const CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Education',
     kind: 'Education document',
-    strongTerms: /\b(transcript|report card|diploma|degree certificate|course syllabus|certificate of completion|student record)\b/gi,
+    strongTerms:
+      /\b(transcript|report card|diploma|degree certificate|course syllabus|certificate of completion|student record)\b/gi,
     terms: /\b(student|school|university|college|course|grade|semester|academic|enrollment|tuition)\b/gi
   },
   {
@@ -191,12 +324,20 @@ export const STATUS_COPY: Record<QueueStatus, string> = {
 }
 
 export const CATEGORY_GROUPS: { label: string; icon: IconName; categories: Exclude<CategoryName, 'All'>[] }[] = [
-  { label: 'Finance & admin', icon: 'performance', categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Finance', 'Insurance'] },
-  { label: 'Personal records', icon: 'person', categories: ['Identity', 'Medical', 'Travel', 'Personal', 'Property'] },
-  { label: 'Work & study', icon: 'bookmark', categories: ['Work', 'Employment', 'Legal', 'Education', 'Research'] },
-  { label: 'Documents & mail', icon: 'files', categories: ['PDFs', 'Documents', 'Spreadsheets', 'Presentations', 'Emails'] },
-  { label: 'Creative & media', icon: 'canvas', categories: ['Images', 'Design', 'Audio', 'Video', 'Media'] },
-  { label: 'Archives & code', icon: 'server', categories: ['Archives', 'Code'] }
+  {
+    label: 'Finance & admin',
+    icon: 'folder',
+    categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Finance', 'Insurance']
+  },
+  { label: 'Personal records', icon: 'file', categories: ['Identity', 'Medical', 'Travel', 'Personal', 'Property'] },
+  { label: 'Work & study', icon: 'new-folder', categories: ['Work', 'Employment', 'Legal', 'Education', 'Research'] },
+  {
+    label: 'Documents & mail',
+    icon: 'edit',
+    categories: ['PDFs', 'Documents', 'Spreadsheets', 'Presentations', 'Emails']
+  },
+  { label: 'Creative & media', icon: 'image', categories: ['Images', 'Design', 'Audio', 'Video', 'Media'] },
+  { label: 'Archives & code', icon: 'timeline', categories: ['Archives', 'Code'] }
 ]
 export const OCR_LANGUAGES = [
   { value: 'eng', label: 'English' },

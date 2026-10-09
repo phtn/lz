@@ -14,8 +14,23 @@ bun run dev
 Copy `.env.example` to `.env` and supply the Firebase web configuration,
 `CONVEX_URL`, a `FILE_URL_SIGNING_KEY` of at least 32 random characters, and
 `TYPESAFE_API_KEY` for Jev. Wrangler reads `.env` and `.env.local` locally.
-For a deployed Worker, configure `TYPESAFE_API_KEY` as a Worker secret
-(`wrangler secret put TYPESAFE_API_KEY`); it must never be a `PUBLIC_` variable.
+For a deployed Worker, configure `CONVEX_URL`, `FILE_URL_SIGNING_KEY`, and
+`TYPESAFE_API_KEY` as Worker secrets; deploying does not upload local `.env`
+values. Use the **production** Convex deployment URL for the deployed Worker,
+not the personal development URL from `.env.local`. Set the secrets on the
+top-level Worker with:
+
+```bash
+bunx wrangler secret put CONVEX_URL --env ''
+bunx wrangler secret put FILE_URL_SIGNING_KEY --env ''
+bunx wrangler secret put TYPESAFE_API_KEY --env ''
+```
+
+The signing key must contain at least 32 random characters. These server-only
+variables must never use the `PUBLIC_` prefix. Verify the secret names with
+`bunx wrangler secret list --env ''`. A missing `CONVEX_URL` makes the library
+request fail immediately after sign-in; a missing signing key prevents file
+previews and uploads from working.
 Enable Google authentication and the appropriate local origin in Firebase.
 Configure the R2 binding in `wrangler.jsonc`. Use `bun run dev:cf` to exercise
 the Cloudflare runtime with the configured development R2 bucket. Ordinary

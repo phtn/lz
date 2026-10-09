@@ -24,7 +24,7 @@ export type NavGroup = {
   count?: number
 }
 
-export const branches: NavGroup[] = CATEGORY_GROUPS.map(({ label, icon, categories }) => ({
+export const navGroups: NavGroup[] = CATEGORY_GROUPS.map(({ label, icon, categories }) => ({
   title: label,
   icon,
   items: categories.map((category) => ({
@@ -38,9 +38,10 @@ export const branches: NavGroup[] = CATEGORY_GROUPS.map(({ label, icon, categori
   }))
 }))
 
-export const navGroups: NavGroup[] = [
+export const navHeader: NavGroup[] = [
   {
     title: 'Workspace',
+    icon: 'arrow-right',
     items: [
       { value: 'All', icon: 'files', label: 'All files', tags: ['library', 'all files'], className: 'sidebar-link' },
       {
@@ -51,8 +52,7 @@ export const navGroups: NavGroup[] = [
         className: 'sidebar-link'
       }
     ]
-  },
-  ...branches
+  }
 ]
 
 export function getFolderCategory(value: string): Exclude<CategoryName, 'All'> | undefined {

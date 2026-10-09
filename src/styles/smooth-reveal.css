@@ -10,7 +10,7 @@
 }
 
 .smooth-reveal > span::after {
-  content: '_';
+  content: '☁';
   margin-left: 0.2rem;
   opacity: 0;
   animation: reveal-cursor 2s 2;
@@ -48,6 +48,7 @@
   50%,
   95% {
     opacity: 1;
+    color: var(--accent);
   }
 }
 
