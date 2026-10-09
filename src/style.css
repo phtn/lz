@@ -103,7 +103,7 @@
   --primary: oklch(0.2046 0 0);
   --positive: oklch(0.72 0.17 155.61);
   --ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
+  --background: oklch(0.9559 0.0109 274.89);
   --foreground: oklch(0.145 0 0);
   --card: oklch(0.9851 0 75.41);
   --card-foreground: oklch(0.145 0 0);
@@ -593,7 +593,7 @@ select {
   padding: 0 10px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--sunken);
   color: var(--muted-foreground);
 }
 .search-field:focus-within {
@@ -854,107 +854,90 @@ select {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 22px;
-  padding: 28px 24px;
-  min-height: 170px;
-  border-radius: 10px;
-  border: 1px dashed var(--line);
-  background: var(--muted);
+  gap: 20px;
+  padding: 36px;
+  min-height: 164px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: linear-gradient(120deg, var(--card), var(--surface));
   transition:
     background 0.2s,
     border-color 0.2s,
     box-shadow 0.2s;
 }
 .drop-surface.is-dragging {
-  border: 2px dashed var(--brand);
-  background: var(--muted);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand) 12%, transparent);
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 6%, var(--card));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 12%, transparent);
 }
-.drop-illustration {
-  position: relative;
-  height: 83px;
-  width: 90px;
-  flex-shrink: 0;
-}
-.drop-file {
-  position: absolute;
-  width: 58px;
-  height: 72px;
+.drop-symbol {
   display: grid;
   place-items: center;
-  border-radius: 9px;
-  border: 1px solid color-mix(in srgb, var(--muted) 22%, var(--line));
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
 }
-.drop-file.back {
-  transform: rotate(-20deg);
-  top: 0;
-  left: 5px;
-  background: var(--foreground);
-  color: var(--muted-foreground);
+.drop-symbol-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
-.drop-file.front {
-  transform: rotate(6deg);
-  top: 10px;
-  left: 32px;
-  background: var(--card);
-  color: var(--muted-foreground);
-  box-shadow: 0 5px 5px #f0f0f0;
+.drop-symbol-tile {
+  fill: color-mix(in srgb, #d6ed92 14%, var(--surface));
 }
-.drop-spark {
-  position: absolute;
-  right: -12px;
-  top: -5.5px;
-  font-size: 21px;
-  color: var(--accent);
+.drop-symbol-back {
+  fill: color-mix(in srgb, var(--foreground) 14%, var(--card));
+  stroke: color-mix(in srgb, var(--foreground) 20%, var(--card));
+  stroke-width: 1;
+}
+.drop-symbol-page {
+  fill: var(--card);
+  stroke: color-mix(in srgb, var(--foreground) 30%, var(--card));
+  stroke-width: 1.2;
+  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 8%));
+}
+.drop-symbol-fold {
+  stroke: color-mix(in srgb, var(--foreground) 30%, var(--card));
+  stroke-width: 1.2;
+}
+.drop-symbol-lines {
+  stroke: var(--muted-foreground);
+  stroke-width: 1.5;
+}
+.drop-symbol-badge {
+  fill: #d6ed92;
+  stroke: var(--card);
+  stroke-width: 3;
+}
+.drop-symbol-arrow {
+  stroke: #303239;
+  stroke-width: 2;
 }
 .drop-copy {
   flex: 1;
   min-width: 0;
 }
-.drop-copy .eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-}
 .drop-copy h2 {
   font-weight: 500;
   font-size: 24px;
-  letter-spacing: -0.025em;
-  margin-top: 10px;
-  line-height: 1.2;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 .drop-copy p {
   color: var(--muted-foreground);
-  font-size: 14px;
-  margin-top: 0px;
+  font-size: 13px;
+  margin-top: 8px;
   line-height: 1.6;
 }
-.drop-features {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 13px;
-  margin-top: 13px;
-  color: var(--muted-foreground);
-  font-size: 12px;
+.drop-surface > .drop-choose {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  flex-shrink: 0;
 }
-.drop-features span {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-.drop-features svg {
-  color: var(--muted-foreground);
-}
-.drop-surface > .button-primary_ {
-  padding: 10px 13px;
-}
-.upload-footnote {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 3px 0;
-  font-size: 9px;
-  color: var(--muted-foreground);
+.upload-section + .library {
+  margin-top: 28px;
 }
 .language-select {
   display: inline-flex;
@@ -1991,39 +1974,25 @@ svg:has(path):not(.no-spin) {
     min-height: 0;
   }
   .drop-surface {
-    flex-wrap: wrap;
-    gap: 15px;
-    padding: 24px 20px;
-    min-height: 185px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 24px;
+    min-height: 0;
+  }
+  .drop-symbol {
+    width: 64px;
+    height: 64px;
   }
   .drop-copy {
-    flex-basis: calc(100% - 65px);
+    flex-basis: auto;
   }
   .drop-copy h2 {
-    font-size: 24px;
+    font-size: 23px;
   }
   .drop-surface > .button-primary {
+    width: 100%;
     min-height: 46px;
-    width: 100%;
-  }
-  .drop-copy .eyebrow {
-    font-size: 10px;
-  }
-  .upload-footnote {
-    flex-wrap: wrap;
-    padding-top: 10px;
-    font-size: 10px;
-  }
-  .language-select {
-    width: 100%;
-    margin-top: 0;
-  }
-  .language-select select {
-    min-height: 40px;
-    max-width: none;
-    flex: 1;
-    padding: 6px;
-    font-size: 16px;
   }
   .library {
     margin-top: 19px;
@@ -2384,7 +2353,7 @@ svg:has(path):not(.no-spin) {
   }
   .drop-surface {
     flex-wrap: wrap;
-    background: var(--card);
+    gap: 20px;
   }
   .file-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -6,6 +6,7 @@ module
 
 import { lazy, useEffect, useEffectEvent, useLinkedState, useRef, useState, useSyncExternalStore } from 'octane'
 import { authenticatedFetch, getCurrentUser, getServerAuthUser, subscribeToAuthState, signInWithGoogle } from '@/lib/firebase'
+import { toast } from '@octanejs/sonner'
 import { uploadFile } from '@/lib/upload'
 import type { CategoryName, QueueItem, StoredFile } from '@/types/file'
 import { MAX_FILE_SIZE, SHOW_EMPTY_FOLDERS } from '@/constants/meta'
@@ -13,7 +14,6 @@ import { analyzeFile } from '@/utils/ocr'
 import { createThumbnail } from '@/utils/thumbnail'
 import DropZone from './DropZone.btsx'
 import { Icon } from '@/lib/icons'
-import { formatBytes } from '@/utils/helpers'
 import Library from './Library.btsx'
 import WorkspaceLayout from '@/layouts/WorkspaceLayout.btsx'
 
@@ -30,7 +30,6 @@ setup
   const [selectedFileId, setSelectedFileId, getSelectedFileId] = useLinkedState(currentUser?.uid, () => null as string | null);
   const [language, setLanguage, getLanguage] = useState('eng');
   const [loading, setLoading] = useLinkedState(currentUser?.uid, () => Boolean(currentUser));
-  const [notice, setNotice] = useLinkedState(currentUser?.uid, () => '');
   const [announcement, setAnnouncement] = useLinkedState(currentUser?.uid, () => '');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -90,7 +89,7 @@ setup
       if (getCurrentUser()?.uid !== user.uid || controller.signal.aborted) return;
       applyLibrary(payload.files ?? [], startedAt);
     } catch (error) {
-      if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : 'Your library could not be loaded.');
+      if (!controller.signal.aborted) toast.error(error instanceof Error ? error.message : 'Your library could not be loaded.', { id: 'workspace-error' });
     } finally { if (!controller.signal.aborted) setLoading(false); }
   };
 
@@ -110,6 +109,7 @@ setup
   useEffect(() => {
     const controller = new AbortController();
     resetAccount();
+    toast.dismiss('workspace-error');
     trackLibraryRequest(controller);
     const startedAt = Date.now();
     if (accountUid) {
@@ -120,11 +120,11 @@ setup
           if (!response.ok) throw new Error(payload.error ?? 'Your library could not be loaded.');
           if (!controller.signal.aborted) applyLibrary(payload.files ?? [], startedAt);
         } catch (error) {
-          if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : 'Your library could not be loaded.');
+          if (!controller.signal.aborted) toast.error(error instanceof Error ? error.message : 'Your library could not be loaded.', { id: 'workspace-error' });
         } finally { if (!controller.signal.aborted) setLoading(false); }
       })();
     }
-    return () => controller.abort();
+    return () => { controller.abort(); toast.dismiss('workspace-error'); };
   });
 
   useEffect(() => {
@@ -198,14 +198,14 @@ setup
   };
 
   const openFilePicker = async () => {
-    setNotice('');
+    toast.dismiss('workspace-error');
     if (getCurrentUser()) { fileInputRef.current?.click(); return; }
     try { await signInWithGoogle(); fileInputRef.current?.click(); }
-    catch (error) { setNotice(error instanceof Error ? error.message : 'Sign in to upload your files.'); }
+    catch (error) { toast.error(error instanceof Error ? error.message : 'Sign in to upload your files.', { id: 'workspace-error' }); }
   };
   const addFiles = (fileList: FileList | File[]) => {
     const user = getCurrentUser();
-    if (!user) { setNotice('Sign in with Google, then drop your files again to save them to your private library.'); return; }
+    if (!user) { toast.error('Sign in with Google, then drop your files again to save them to your private library.', { id: 'workspace-error' }); return; }
     const files = Array.from(fileList);
     if (!files.length) return;
     const nextItems: QueueItem[] = files.map((file) => ({
@@ -214,7 +214,7 @@ setup
       error: file.size === 0 ? 'This file is empty. Choose a file with contents.' : file.size > MAX_FILE_SIZE ? 'This file exceeds the 20 MB limit.' : undefined,
       previewUrl: file.type.startsWith('image/') && file.size <= MAX_FILE_SIZE ? URL.createObjectURL(file) : undefined
     }));
-    setNotice(''); setIsQueueOpen(true);
+    toast.dismiss('workspace-error'); setIsQueueOpen(true);
     syncQueue((items) => [...items, ...nextItems]);
     processQueue();
   };
@@ -258,7 +258,7 @@ setup
       deletedIdsRef.current.delete(id);
       setDeletedIds(new Set(deletedIdsRef.current));
       setLibrary((current) => current.some((item) => item.id === id) ? current : [file, ...current]);
-      setNotice(error instanceof Error ? error.message : 'The file could not be deleted.');
+      toast.error(error instanceof Error ? error.message : 'The file could not be deleted.', { id: 'workspace-error' });
     }
   };
   const categoryCounts = (() => {
@@ -274,8 +274,6 @@ setup
       (!needle || searchResults.some((result) => result.id === file.id) || `${file.name} ${file.kind} ${file.category} ${file.excerpt}`.toLowerCase().includes(needle)));
   })();
   const activeQueueCount = queue.filter((item) => !['done', 'error'].includes(item.status)).length;
-  const totalBytes = library.reduce((total, file) => total + file.size, 0);
-  const firstName = currentUser?.displayName?.trim().split(/\s+/)[0] || 'friend';
   const selectedFile = library.find((file) => file.id === selectedFileId) ?? searchResults.find((file) => file.id === selectedFileId) ?? null;
 
   const previewFiles = selectedFile && !filteredLibrary.some((file) => file.id === selectedFile.id) ? [selectedFile, ...filteredLibrary] : filteredLibrary;
@@ -286,39 +284,9 @@ div.dashboard
     ~ topbar={{ search, setSearch, searchInputRef, onAddFiles: () => void openFilePicker() }}
     ~ )
     div.workspace-content
-      header.workspace-heading.workspace-welcome
-        div
-          p.eyebrow YOUR PERSONAL WORKSPACE
-          h2 Welcome back, #{firstName}.
-          p A little more order. A little less on your mind.
-        span.workspace-private
-          Icon(name="shield-check" size={16})
-          | Your private library
-      section.workspace-overview(aria-label="Library overview" aria-busy={loading})
-        article
-          Icon(name="files" size={23})
-          div
-            strong #{loading ? '—' : library.length}
-            span #{library.length === 1 ? 'File in your library' : 'Files in your library'}
-        article
-          Icon(name="folder" size={23})
-          div
-            strong #{loading ? '—' : categoryCounts.size}
-            span Smart folders used
-        article
-          Icon(name="cloud" size={23})
-          div
-            strong #{loading ? '—' : formatBytes(totalBytes)}
-            span Stored originals
-      if notice
-        div.notice(role="alert" className="bg-red-400")
-          Icon(name="alert-fill" size={18})
-          span #{notice}
-          button.icon-button(type="button" onClick={() => setNotice('')} aria-label="Dismiss message")
-            Icon(name="close")
       DropZone(isDragging={isDragging} setIsDragging={setIsDragging} addFiles={addFiles} fileInputRef={fileInputRef} onAddFiles={() => void openFilePicker()} language={language} setLanguage={setLanguage})
-      div.workspace-library-divider(aria-hidden="true")
-      Library(filteredLibrary={filteredLibrary} categoryCounts={categoryCounts} activeCategory={activeCategory} setActiveCategory={selectCategory} search={search} selectedFileId={selectedFileId} selectFile={selectFile} onAddFiles={() => void openFilePicker()} loading={loading || searchBusy} onRefresh={() => { if (getCurrentUser()) { setLoading(true); void refreshLibrary(new AbortController()); } }})
+      if library.length > 0 || filteredLibrary.length > 0
+        Library(filteredLibrary={filteredLibrary} categoryCounts={categoryCounts} activeCategory={activeCategory} setActiveCategory={selectCategory} search={search} selectedFileId={selectedFileId} selectFile={selectFile} onAddFiles={() => void openFilePicker()} loading={loading || searchBusy} onRefresh={() => { if (getCurrentUser()) { setLoading(true); void refreshLibrary(new AbortController()); } }})
   span.sr-only(role="status" aria-live="polite" aria-atomic="true") #{announcement}
   if selectedFile
     try

@@ -11,7 +11,7 @@ module
   }
 
 import { useRef } from 'octane'
-import { CATEGORY_NAMES, OCR_LANGUAGES } from '@/constants/meta'
+import { OCR_LANGUAGES } from '@/constants/meta'
 import { Icon } from '@/lib/icons'
 
 props { isDragging, setIsDragging, addFiles, fileInputRef, onAddFiles, language, setLanguage }: DropZoneProps
@@ -26,31 +26,21 @@ section.upload-section(aria-label="Upload files")
     ~ onDragLeave={(event) => { event.preventDefault(); dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setIsDragging(false); }}
     ~ onDrop={(event) => { event.preventDefault(); dragDepth.current = 0; setIsDragging(false); if (event.dataTransfer) addFiles(event.dataTransfer.files); }}
     ~ )
-    div.drop-illustration(aria-hidden="true")
-      span.drop-file.back
-        Icon(name="folder" size={29})
-      span.drop-file.front
-        Icon(name="new-folder" size={30})
-      span.drop-spark ✦
+    div.drop-symbol(aria-hidden="true")
+      svg.drop-symbol-art(viewBox="0 0 72 72" fill="none")
+        rect.drop-symbol-tile(x="0" y="0" width="72" height="72" rx="22")
+        rect.drop-symbol-back(x="19" y="15" width="29" height="39" rx="5" transform="rotate(-13 33.5 34.5)")
+        path.drop-symbol-page(d="M29 16h16l10 10v29a5 5 0 0 1-5 5H29a5 5 0 0 1-5-5V21a5 5 0 0 1 5-5Z")
+        path.drop-symbol-fold(d="M45 16v6a4 4 0 0 0 4 4h6")
+        path.drop-symbol-lines(d="M32 34h15M32 41h11M32 48h7" strokeLinecap="round")
+        circle.drop-symbol-badge(cx="55" cy="54" r="12")
+        path.drop-symbol-arrow(d="M55 59V49m-4 4 4-4 4 4" strokeLinecap="round" strokeLinejoin="round")
     div.drop-copy
       h2 #{isDragging ? 'Drop files to upload' : 'Upload and organize files'}
-      div.drop-features
-        p(className='flex items-center gap-2')
-          Icon(name="shield-check" size={16})
-          | On-device classification
-        p(className='flex items-center gap-2')
-          Icon(name="folder" size={16})
-          | #{CATEGORY_NAMES.length} smart folders
-    button.button-primary(type="button" onClick={onAddFiles} style="height: 36px" )
+      p Drop them here. We’ll take care of the sorting.
+    button.button-primary.drop-choose(type="button" onClick={onAddFiles})
       Icon(name="add" size={18})
       span Choose files
-  div.upload-footnote
-    // div.infinity-lines(className="h-10 w-full grayscale opacity-40")
-    // div.drop-lines.smooth-reveal(className="h-6 w-1/2 grayscale opacity-40")
-    // span Images, PDFs, Office docs & more · Up to 20 MB per file
-    label.language-select(className="hidden!")
-      Icon(name="sparkles" size={14})
-      span OCR language
-      select(value={language} onChange={(event) => setLanguage(event.currentTarget.value)} aria-label="OCR language")
-        each option in OCR_LANGUAGES key option.value
-          option(value={option.value}) #{option.label}
+  select.sr-only(value={language} onChange={(event) => setLanguage(event.currentTarget.value)} aria-label="OCR language" tabIndex={-1})
+    each option in OCR_LANGUAGES key option.value
+      option(value={option.value}) #{option.label}

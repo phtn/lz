@@ -20,6 +20,11 @@ module
     }
   }
 
+component AuthLoading
+  main(className="grid min-h-screen place-items-center p-6" role="status" aria-label="Loading workspace")
+    Icon(name="spinner-ring" className="text-muted-foreground [&_svg]:animate-spin [&_svg]:[animation-duration:900ms]")
+    span.sr-only Opening your workspace…
+
 component Dashboard
   setup
     const initialState = use(loadInitialState());
@@ -30,7 +35,9 @@ component Dashboard
     meta(name="twitter:image" content={initialState.socialImage})
     ThemeProvider
       div.app-view
-        if ready && currentUser
+        if !ready
+          AuthLoading
+        elseif currentUser
           FileDashboard(initialLibrary={initialState.library})
         else
           LandingPage(authReady={ready})
@@ -55,10 +62,7 @@ fragment
   try
     Dashboard
   pending
-    main(className="grid min-h-screen place-items-center p-6" aria-label="Loading file library")
-      div(className="grid justify-items-center gap-3 text-center text-muted-foreground [&_h1]:m-0 [&_p]:m-0")
-        Icon(name="spinner-ring" className="[&_svg]:animate-spin [&_svg]:[animation-duration:900ms]")
-        p Opening your file library…
+    AuthLoading
   catch error
     main(className="grid min-h-screen place-items-center p-6" role="alert")
       div(className="grid justify-items-center gap-3 text-center text-muted-foreground [&_h1]:m-0 [&_p]:m-0")

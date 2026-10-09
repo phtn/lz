@@ -25,6 +25,7 @@ module
   function toggleTheme() { setTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
 
 import { useSyncExternalStore } from 'octane'
+import { Toaster } from '@octanejs/sonner'
 import { ThemeContext, type Theme } from '@/context/theme'
 
 props { children }: ThemeProviderProps
@@ -34,3 +35,4 @@ setup
 
 ThemeContext(value={value})
   | #{children}
+  Toaster(theme={theme} position="bottom-right" closeButton duration={6000})

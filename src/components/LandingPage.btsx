@@ -5,8 +5,16 @@ module
     { id: 'receipt', label: 'A receipt', name: 'Coffee receipt.jpg', folder: 'Receipts', title: 'RECEIPT', reference: 'ORDER / 00482', detail: 'Coffee & a little inspiration', amount: '$8.50', icon: 'receipt' },
     { id: 'travel', label: 'A travel document', name: 'Flight itinerary.pdf', folder: 'Travel', title: 'ITINERARY', reference: 'MNL → NRT', detail: 'Your next adventure', amount: '09:40 AM', icon: 'personal-record' }
   ] as const;
+  function subscribeToMotionPreference(notify: VoidFunction) {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    preference.addEventListener('change', notify);
+    return () => preference.removeEventListener('change', notify);
+  }
+  function getReducedMotion() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  function getServerReducedMotion() { return false; }
 
-import { useState } from 'octane'
+import { use, useState, useSyncExternalStore } from 'octane'
+import { ThemeContext } from '@/context/theme'
 import { signInWithGoogle } from '@/lib/firebase'
 import { Icon } from '@/lib/icons'
 import { CATEGORY_NAMES } from '@/constants/meta'
@@ -16,10 +24,12 @@ component StartButton
   props { busy, disabled, onClick, label = 'Get organized' }: { busy: boolean; disabled: boolean; onClick: VoidFunction; label?: string }
   button.landing-button(type="button" disabled={disabled || busy} onClick={onClick} aria-busy={busy})
     span #{busy ? 'Connecting…' : label}
-    Icon(name={busy ? 'spinner-ring' : 'arrow-right'} size={18} className={busy ? 'icon-spinning' : ''})
+    Icon(name="arrow-right" size={18} className="text-[#FFF]!")
 
 props { authReady }: { authReady: boolean }
 setup
+  const { theme } = use(ThemeContext);
+  const reducedMotion = useSyncExternalStore(subscribeToMotionPreference, getReducedMotion, getServerReducedMotion);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState('');
   const [exampleIndex, setExampleIndex] = useState(0);
@@ -31,14 +41,16 @@ setup
     catch (error) { setAuthError(error instanceof Error ? error.message : 'Sign-in could not be completed. Please try again.'); }
     finally { setBusy(false); }
   };
+  const brand = 'DropZone'
+  const cloud = '☁'
 
 div.landing-page
   a.landing-skip(href="#landing-main") Skip to content
   header.landing-nav
     a.landing-brand(href="/" aria-label="DropZone home")
-      span.landing-logo(aria-hidden="true")
-        Icon(name="down" size={23})
-      span DropZone
+      span(className='text-3xl text-accent z-0') #{cloud}
+      // MetalText.landing-metal-logo(text="☁" preset='chromatic' strength={0.3} theme={theme} paused={reducedMotion} aria-hidden={true})
+      span #{brand}
     nav.landing-links(aria-label="Main navigation")
       a(href="#how-it-works") How it works
       a(href="#features") The good stuff
@@ -222,14 +234,29 @@ div.landing-page
         p Text recognition runs in your browser. After you sign in, your originals and extracted text are saved to your account. Cloud classification helps check the suggested folder.
       a.landing-text-link(href="#how-it-works") Explore the workflow
     section.landing-final-cta(aria-labelledby="cta-title")
-      p.landing-eyebrow MAKE ROOM FOR WHAT MATTERS
-      h2#cta-title A fresh start for your files.
-      p Less searching. Less sorting. A little more breathing room.
+      p.landing-eyebrow FOR YOU. YOUR TEAM. YOUR ORGANIZATION.
+      h2#cta-title A fresh start, at every scale.
+      p From everyday documents to the work you do together. Find your place with DropZone.
+      div.landing-account-types(role="group" aria-label="Account types")
+        article.landing-account-card
+          span.landing-account-icon
+            Icon(name="personal" size={25})
+          h3 Personal
+          p For your everyday files and life’s important details. A little less sorting, a little more peace of mind.
+        article.landing-account-card
+          span.landing-account-icon
+            Icon(name="team" size={25})
+          h3 Team
+          p For people who work together. Bring a little more order to the documents that keep your team moving.
+        article.landing-account-card
+          span.landing-account-icon
+            Icon(name="work" size={25})
+          h3 Enterprise
+          p For organizations with bigger document needs. Make room for order as your business grows.
       StartButton(busy={busy} disabled={!authReady} onClick={() => void start()} label="Start with Google")
   footer.landing-footer
     a.landing-brand(href="/" aria-label="DropZone home")
-      span.landing-logo(aria-hidden="true")
-        Icon(name="down" size={20})
-      span DropZone
-    p Drop it. Find your calm.
-    a(href="#landing-main") Back to top ↑
+      span.landing-logo.text-accent.opacity-33(aria-hidden="true") #{cloud}
+      span #{brand}
+    p From the makers of bigticket.ph
+    // a(href="#landing-main") Back to top ↑

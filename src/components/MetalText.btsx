@@ -1,0 +1,84 @@
+module
+  "use strong";
+  interface MetalTextProps {
+    text: string;
+    preset?: MetalFxPreset;
+    theme?: 'light' | 'dark';
+    paused?: boolean;
+    strength?: number;
+    fontSize?: number;
+    className?: string;
+    'aria-hidden'?: boolean;
+  }
+
+import { useEffect, useEffectEvent, useRef } from 'octane'
+import type { MetalFxPreset } from '@beastjs/metal-fx'
+import { mount, resize, unmount, updateAppearance, wake, type Instance } from '@/lib/metal-text/renderer'
+import { PRESETS } from '@/lib/metal-text/presets'
+import { cn } from '@/lib/utils'
+
+props { text, preset = 'silver', theme = 'light', paused = false, strength = 1, fontSize = 30, className, 'aria-hidden': ariaHidden }: MetalTextProps
+setup
+  const rootRef = useRef<HTMLSpanElement | null>(null);
+  const textRef = useRef<HTMLSpanElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const instanceRef = useRef<Instance | null>(null);
+  const sync = useEffectEvent(() => {
+    const root = rootRef.current;
+    const label = textRef.current;
+    const instance = instanceRef.current;
+    if (!root || !label || !instance) return;
+    const rect = root.getBoundingClientRect();
+    resize(instance, rect.width, rect.height, text, getComputedStyle(label).font);
+    updateAppearance(instance, PRESETS[preset][theme], paused, strength);
+  });
+  useEffect(() => {
+    const root = rootRef.current;
+    const canvas = canvasRef.current;
+    if (!root || !canvas) return;
+    let instance: Instance;
+    try {
+      instance = mount(canvas, () => { root.dataset.ready = 'true'; });
+      instanceRef.current = instance;
+      sync();
+    } catch {
+      if (instanceRef.current) unmount(instanceRef.current);
+      instanceRef.current = null;
+      return;
+    }
+    const observer = new ResizeObserver(() => sync());
+    observer.observe(root);
+    const visibility = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([entry]) => {
+      instance.visible = entry!.isIntersecting;
+      wake();
+    });
+    visibility?.observe(root);
+    let disposed = false;
+    const fontsChanged = () => { if (!disposed) sync(); };
+    void document.fonts.ready.then(fontsChanged);
+    document.fonts.addEventListener('loadingdone', fontsChanged);
+    window.addEventListener('resize', fontsChanged);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      visibility?.disconnect();
+      document.fonts.removeEventListener('loadingdone', fontsChanged);
+      window.removeEventListener('resize', fontsChanged);
+      unmount(instance);
+      instanceRef.current = null;
+    };
+  });
+  useEffect(() => {
+    const root = rootRef.current;
+    const label = textRef.current;
+    const instance = instanceRef.current;
+    if (!root || !label || !instance) return;
+    const rect = root.getBoundingClientRect();
+    const font = getComputedStyle(label);
+    resize(instance, rect.width, rect.height, text, `${font.fontWeight} ${fontSize}px ${font.fontFamily}`);
+    updateAppearance(instance, PRESETS[preset][theme], paused, strength);
+  });
+
+span.metal-text(ref={rootRef} className={cn(className)} style={{ fontSize }} aria-hidden={ariaHidden})
+  span.metal-text-fallback(ref={textRef}) #{text}
+  canvas.metal-text-canvas(ref={canvasRef} aria-hidden="true")

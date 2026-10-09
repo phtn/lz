@@ -31,7 +31,7 @@ setup
 
 header.topbar-header
   div.topbar
-    h1.topbar-title
+    h1.topbar-title.smooth-reveal
       span DropZone
       // a(href="/" aria-label="DropZone home")
     if !isMobile
@@ -40,7 +40,6 @@ header.topbar-header
       if isMobile
         ThemeToggle
       button.account-button(type="button" disabled={busy || !ready} onClick={() => void handleAuthClick()} aria-label={currentUser ? 'Sign out' : 'Sign in with Google'} title={currentUser?.email ?? 'Sign in with Google'})
-        Icon(name="person" size={18} className="account-icon")
         span #{currentUser ? currentUser.displayName?.split(' ')[0] ?? 'Account' : 'Sign in'}
 
       if isMobile

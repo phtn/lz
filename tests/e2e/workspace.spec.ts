@@ -57,8 +57,8 @@ test('signed-in desktop library, preview controls, extracted text, and folder co
   await mockWorkspace(page)
   await page.goto('/')
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Welcome back, Alex.' })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Library overview' })).toContainText('2Files in your library')
+  await expect(page.getByRole('heading', { name: 'Upload and organize files' })).toBeVisible()
+  await expect(page.locator('.workspace-welcome, .workspace-overview')).toHaveCount(0)
   await expect(page.locator('.landing-page')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Preview travel-photo/ })).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCSS('height', '64px')
@@ -91,7 +91,41 @@ test('signed-in desktop library, preview controls, extracted text, and folder co
   await page.screenshot({ path: 'test-results/desktop-preview.png' })
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).not.toBeVisible()
+  await page.route('**/api/files', (route) => route.fulfill({ status: 503, json: { error: 'Your library could not be loaded.' } }))
+  await page.getByRole('button', { name: 'Refresh library' }).click()
+  await expect(page.locator('[data-sonner-toast]')).toContainText('Your library could not be loaded.')
+  await expect(page.locator('.workspace-content > .notice')).toHaveCount(0)
+  await page.locator('[data-sonner-toast] [data-close-button]').click()
+  await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+  await page.route('**/api/files', (route) => route.fulfill({ json: { files: [] } }))
+  await page.getByRole('button', { name: 'Refresh library' }).click()
+  await expect(page.locator('.library')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Upload and organize files' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Choose files', exact: true })).toBeVisible()
+  await page.screenshot({ path: 'test-results/desktop-empty.png' })
   expect(errors).toEqual([])
+})
+
+test('authenticated refresh never renders the signed-out landing page', async ({ page }) => {
+  await mockWorkspace(page)
+  await page.addInitScript(() => {
+    sessionStorage.removeItem('landing-flashed')
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof Element && (node.matches('.landing-page') || node.querySelector('.landing-page'))) {
+            sessionStorage.setItem('landing-flashed', 'yes')
+          }
+        }
+      }
+    }).observe(document, { childList: true, subtree: true })
+  })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Upload and organize files' })).toBeVisible()
+  expect(await page.evaluate(() => sessionStorage.getItem('landing-flashed'))).toBeNull()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Upload and organize files' })).toBeVisible()
+  expect(await page.evaluate(() => sessionStorage.getItem('landing-flashed'))).toBeNull()
 })
 
 test('mobile layouts in both themes stay within the viewport and preview remains usable', async ({ page }) => {
@@ -439,12 +473,16 @@ test('signed-out landing page explains the product and keeps account tools priva
   await expect(page.locator('.landing-demo-folder')).toContainText('Travel')
   await page.screenshot({ path: 'test-results/landing-desktop-light.png', fullPage: true })
   await page.getByRole('link', { name: 'See how it works' }).click()
-  await expect(page.getByRole('heading', { name: 'Three steps. Zero busywork.' })).toBeInViewport()
+  await expect(page.getByRole('heading', { name: 'Private by design. Clear by default.' })).toBeInViewport()
   for (const width of [320, 390, 574, 768, 1024]) {
     await page.setViewportSize({ width, height: 900 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Switch to dark mode' })).toBeVisible()
+    const accountTypes = page.getByRole('group', { name: 'Account types' })
+    for (const name of ['Personal', 'Team', 'Enterprise']) {
+      await expect(accountTypes.getByRole('heading', { name, exact: true })).toBeVisible()
+    }
   }
   await page.getByRole('button', { name: 'Switch to dark mode' }).click()
   await expect(page.locator('html')).toHaveClass(/dark/)
