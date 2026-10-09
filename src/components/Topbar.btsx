@@ -10,7 +10,6 @@ import { useState, useSyncExternalStore } from 'octane'
 import type { WorkspaceTopbarProps } from '@/types/layout'
 import { getAuthStateReady, getCurrentUser, getServerAuthStateReady, getServerAuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
 import { Icon } from '@/lib/icons'
-import ThemeToggle from './ThemeToggle.btsx'
 import SearchField from './SearchField.btsx'
 
 
@@ -37,10 +36,7 @@ header.topbar-header
     if !isMobile
       SearchField(search={search} setSearch={setSearch} searchInputRef={searchInputRef})
     div.topbar-actions
-      if isMobile
-        ThemeToggle
       button.account-button(type="button" disabled={busy || !ready} onClick={() => void handleAuthClick()} aria-label={currentUser ? 'Sign out' : 'Sign in with Google'} title={currentUser?.email ?? 'Sign in with Google'})
-        Icon(name={busy || !ready ? 'spinner-ring' : 'person'} size={18})
         span #{currentUser ? currentUser.displayName?.split(' ')[0] ?? 'Account' : 'Sign in'}
 
       if isMobile

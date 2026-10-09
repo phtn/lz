@@ -463,7 +463,7 @@ select {
   padding: 3px;
   border: 0;
   border-radius: 4px;
-  background: var(--muted-foreground);
+  background: var(--foreground);
   transition:
     background 0.18s,
     transform 0.18s;
@@ -483,8 +483,8 @@ select {
   transition: transform 0.24s ease-out;
 }
 .sidebar-toggle:active {
-  background: var(--foreground);
-  transform: scale(0.97) skew(2deg);
+  background: var(--muted-foreground);
+  transform: scale(0.94) skew(4deg);
 }
 .sidebar[data-compact] .sidebar-toggle > span {
   transform: translateX(0);
@@ -828,6 +828,15 @@ select {
   font-weight: 500;
   letter-spacing: -0.025em;
   text-transform: uppercase;
+}
+.mobile-sidebar .branched-sidebar-nav {
+  direction: rtl;
+}
+.mobile-sidebar .branched-sidebar-nav nav {
+  margin-inline-end: auto;
+}
+.mobile-sidebar [data-bm-branches] {
+  transform: scaleX(-1);
 }
 .mobile-sidebar .sidebar-footer {
   position: relative;

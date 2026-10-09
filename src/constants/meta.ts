@@ -7,6 +7,7 @@ export const SHOW_EMPTY_FOLDERS = true
 export const CATEGORY_NAMES: Exclude<CategoryName, 'All'>[] = [
   'Receipts',
   'Finance',
+  'Investments',
   'Legal',
   'Identity',
   'Medical',
@@ -38,6 +39,7 @@ export const CATEGORY_NAMES: Exclude<CategoryName, 'All'>[] = [
 export const CATEGORY_META: Record<CategoryName, { color: string; background: string; iconClass: string }> = {
   Receipts: { color: '#a44b14', background: '#fff0df', iconClass: 'text-orange-600 dark:text-orange-400' },
   Finance: { color: '#3f6d51', background: '#eaf5eb', iconClass: 'text-green-600 dark:text-green-400' },
+  Investments: { color: '#3f6d51', background: '#eaf5eb', iconClass: 'text-green-600 dark:text-green-400' },
   Legal: { color: '#76562b', background: '#f5eedf', iconClass: 'text-amber-600 dark:text-amber-400' },
   Identity: { color: '#4b5b9b', background: '#edf0ff', iconClass: 'text-indigo-600 dark:text-indigo-400' },
   Medical: { color: '#9a4661', background: '#faeaf0', iconClass: 'text-rose-600 dark:text-rose-400' },
@@ -229,6 +231,12 @@ export const CATEGORY_RULES: CategoryRule[] = [
     terms: /\b(assets|liabilities|equity|revenue|expenses)\b/gi
   },
   {
+    category: 'Investments',
+    kind: 'Securities',
+    strongTerms: /\b(securities report|stocks|assets|bonds|options|gains|loss)\b/gi,
+    terms: /\b(stocks|securities|etf|bonds|options|futures|assets)\b/gi
+  },
+  {
     category: 'Receipts',
     kind: 'Receipt',
     strongTerms: /\b(receipt|subtotal|cashier|change due|thank you for your purchase|merchant copy|order total)\b/gi,
@@ -326,18 +334,22 @@ export const STATUS_COPY: Record<QueueStatus, string> = {
 export const CATEGORY_GROUPS: { label: string; icon: IconName; categories: Exclude<CategoryName, 'All'>[] }[] = [
   {
     label: 'Finance & admin',
-    icon: 'new-folder',
-    categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Finance', 'Insurance']
+    icon: 'finance',
+    categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Investments', 'Insurance']
   },
-  { label: 'Personal records', icon: 'folder', categories: ['Identity', 'Medical', 'Travel', 'Personal', 'Property'] },
-  { label: 'Work & study', icon: 'folder', categories: ['Work', 'Employment', 'Legal', 'Education', 'Research'] },
+  {
+    label: 'Personal records',
+    icon: 'personal-record',
+    categories: ['Identity', 'Medical', 'Travel', 'Personal', 'Property']
+  },
+  { label: 'Work & study', icon: 'work', categories: ['Work', 'Employment', 'Legal', 'Education', 'Research'] },
   {
     label: 'Documents & mail',
-    icon: 'edit',
+    icon: 'documents',
     categories: ['PDFs', 'Documents', 'Spreadsheets', 'Presentations', 'Emails']
   },
-  { label: 'Creative & media', icon: 'folder', categories: ['Images', 'Design', 'Audio', 'Video', 'Media'] },
-  { label: 'Archives & code', icon: 'folder', categories: ['Archives', 'Code'] }
+  { label: 'Creative & media', icon: 'creative', categories: ['Images', 'Design', 'Audio', 'Video', 'Media'] },
+  { label: 'Archives & code', icon: 'archive', categories: ['Archives', 'Code'] }
 ]
 export const OCR_LANGUAGES = [
   { value: 'eng', label: 'English' },

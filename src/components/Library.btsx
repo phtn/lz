@@ -42,17 +42,17 @@ section.library(aria-labelledby="library-title" aria-busy={loading})
     div.library-tools
       button.icon-button(type="button" onClick={onRefresh} disabled={loading} aria-label="Refresh library" title="Refresh library")
         Icon(name={loading ? 'spinner-ring' : 'refresh'} size={14})
-      label.sort-control
-        span.sr-only Sort files
-        select(value={sort} onChange={(event) => setSort(event.currentTarget.value)} aria-label="Sort files")
-          option(value="newest") Newest first
-          option(value="name") Name A–Z
-          option(value="size") Largest first
+      // label.sort-control
+      //   span.sr-only Sort files
+      //   select(value={sort} onChange={(event) => setSort(event.currentTarget.value)} aria-label="Sort files")
+      //     option(value="newest") Newest first
+      //     option(value="name") Name A–Z
+      //     option(value="size") Largest first
       div.view-toggle(role="group" aria-label="File view")
-        button.icon-button(className={viewMode === 'grid' ? 'is-active' : ''} type="button" onClick={() => setViewMode('grid')} aria-label="Grid view" title="Grid view" aria-pressed={viewMode === 'grid'})
-          Icon(name="grid" size={18})
+        // button.icon-button(className={viewMode === 'grid' ? 'is-active' : ''} type="button" onClick={() => setViewMode('grid')} aria-label="Grid view" title="Grid view" aria-pressed={viewMode === 'grid'})
+        //   Icon(name="fat-rows" size={18})
         button.icon-button(className={viewMode === 'list' ? 'is-active' : ''} type="button" onClick={() => setViewMode('list')} aria-label="List view" title="List view" aria-pressed={viewMode === 'list'})
-          Icon(name="grid" size={18})
+          Icon(name="list" size={18})
 
   if loading && filteredLibrary.length === 0
     div.library-skeleton(aria-label="Loading files")

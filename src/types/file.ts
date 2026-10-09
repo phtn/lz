@@ -3,6 +3,7 @@ export type QueueStatus = 'queued' | 'reading' | 'classifying' | 'uploading' | '
 export type CategoryName =
   | 'Receipts'
   | 'Finance'
+  | 'Investments'
   | 'Legal'
   | 'Identity'
   | 'Medical'

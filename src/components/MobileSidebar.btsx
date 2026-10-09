@@ -47,7 +47,8 @@ dialog#mobile-navigation.mobile-sidebar(
       button.icon-button(type="button" onClick={() => onOpenChange(false)} aria-label="Close navigation")
         Icon(name="close" size={16})
     p#mobile-navigation-description.sr-only Swipe right or use the close button to close navigation.
-    MobileSidebarNav(navigation={navigation} onNavigate={() => onOpenChange(false)})
+    div(className='px-4 h-full')
+      MobileSidebarNav(navigation={navigation} onNavigate={() => onOpenChange(false)})
     footer.sidebar-footer
       ThemeToggle
       span Private on-device OCR

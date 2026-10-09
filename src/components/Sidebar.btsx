@@ -4,6 +4,7 @@ import type { WorkspaceNavigationProps } from '@/types/layout'
 import { formatBytes } from '@/utils/helpers'
 import ThemeToggle from './ThemeToggle.btsx'
 import SidebarNav from './SidebarNav.btsx'
+import {Icon} from "@/lib/icons";
 
 props { isCompact = false, toggleSidebar, ...navigation }: WorkspaceNavigationProps & { isCompact?: boolean; toggleSidebar: VoidFunction }
 setup const storageUsed = navigation.library.reduce((total, file) => total + file.size, 0);
@@ -15,4 +16,6 @@ aside.sidebar(aria-label="Workspace sidebar" data-compact={isCompact || undefine
   SidebarNav({...navigation} isCompact={isCompact} onExpand={toggleSidebar})
   footer.sidebar-footer
     ThemeToggle
-    span.storage-summary(title={`${formatBytes(storageUsed)} stored · ${navigation.library.length} files · OCR stays on your device`}) #{formatBytes(storageUsed)} stored
+    div(className='flex items-center gap-1')
+      span.storage-summary(title={`${formatBytes(storageUsed)} stored · ${navigation.library.length} files · OCR stays on your device`}) #{formatBytes(storageUsed)}
+      Icon(name='cloud' size={14})
