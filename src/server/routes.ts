@@ -8,6 +8,7 @@ import {
   createObjectKey,
   createStoredFileUrl,
   deleteStoredFile,
+  downloadStoredFile,
   requirePlatform,
   serveStoredFile,
   storageError,
@@ -180,8 +181,17 @@ export async function handleFileById(context: Context) {
     const platform = requirePlatform(context.platform)
     const externalId = context.params.id
 
-    if (context.request.method === 'GET' && new URL(context.request.url).searchParams.get('metadata') !== '1') {
+    const url = new URL(context.request.url)
+    const reading = context.request.method === 'GET' || context.request.method === 'HEAD'
+    const downloading = url.searchParams.get('download') === '1'
+    if (reading && url.searchParams.get('metadata') !== '1' && !downloading) {
       return await serveStoredFile(platform, externalId, context.request)
+    }
+    if (reading && downloading) {
+      const { client } = await authenticateRequest(context.request, platform.env.CONVEX_URL)
+      const indexed = await client.query(api.files.getByExternalId, { externalId })
+      if (!indexed) return json({ error: 'File not found.' }, 404)
+      return await downloadStoredFile(platform, fromIndexedFile(indexed), context.request)
     }
     if (context.request.method === 'GET' || context.request.method === 'PATCH') {
       const { client } = await authenticateRequest(context.request, platform.env.CONVEX_URL)

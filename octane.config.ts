@@ -31,7 +31,7 @@ export default defineConfig({
       }),
       new ServerRoute({
         path: '/api/files/:id',
-        methods: ['GET', 'PATCH', 'DELETE'],
+        methods: ['GET', 'HEAD', 'PATCH', 'DELETE'],
         handler: handleFileById
       })
     ]

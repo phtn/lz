@@ -37,7 +37,7 @@ section.upload-section(aria-label="Upload files")
         path.drop-symbol-arrow(d="M55 59V49m-4 4 4-4 4 4" strokeLinecap="round" strokeLinejoin="round")
     div.drop-copy
       h2 #{isDragging ? 'Drop files to upload' : 'Upload and organize files'}
-      p Drop them here. We’ll take care of the sorting.
+      p Add receipts, photos, and documents. We’ll take care of the sorting.
     button.button-primary.drop-choose(type="button" onClick={onAddFiles})
       Icon(name="add" size={18})
       span Choose files

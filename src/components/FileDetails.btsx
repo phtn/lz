@@ -12,6 +12,7 @@ import { lazy, useEffect, useLinkedState, useRef, useState } from 'octane'
 import type { StoredFile, CategoryName } from '@/types/file'
 import { CATEGORY_NAMES } from '@/constants/meta'
 import { authenticatedFetch } from '@/lib/firebase'
+import { downloadOriginal } from '@/lib/download'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
 import { Icon } from '@/lib/icons'
@@ -20,6 +21,9 @@ module const PdfViewer = lazy(() => import('./PdfViewer.btsx'));
 props { file, files, onSelect, onClose, deleteFile, onUpdate }: FileDetailsProps
 setup
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const swipeRef = useRef<{ id: number; x: number; y: number } | null>(null);
+  const downloadControllerRef = useRef<AbortController | null>(null);
+  const [downloading, setDownloading] = useLinkedState(file.id, () => false);
   const [details, setDetails, getDetails] = useLinkedState(file.id, () => file);
   const [tab, setTab] = useLinkedState(file.id, () => 'preview');
   const [message, setMessage] = useLinkedState(file.id, () => '');
@@ -50,7 +54,7 @@ setup
       } catch (error) { if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : 'File details could not be refreshed.'); }
       finally { if (!controller.signal.aborted) setMetadataLoading(false); }
     })();
-    return () => controller.abort();
+    return () => { controller.abort(); downloadControllerRef.current?.abort(); };
   });
   const handleTabKey = (event: KeyboardEvent) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
@@ -76,34 +80,42 @@ setup
     try { await navigator.clipboard.writeText(details.text ?? details.excerpt); setCopied(true); }
     catch { setMessage('Copy is unavailable in this browser. Select the text and copy it manually.'); }
   };
+  const download = async () => {
+    if (downloading) return;
+    const controller = new AbortController();
+    downloadControllerRef.current = controller;
+    setDownloading(true); setMessage('');
+    try { await downloadOriginal(file.id, file.name, controller.signal); }
+    catch (error) { if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : 'The file could not be downloaded. Please try again.'); }
+    finally { if (!controller.signal.aborted) setDownloading(false); }
+  };
 
 dialog.file-dialog(ref={dialogRef} aria-labelledby="preview-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }})
   header.preview-header
-    span.preview-file-icon
-      Icon(name={getFileIcon(file.name, file.mimeType)} size={22})
     div.preview-title
       h2#preview-title #{file.name}
-      p #{formatBytes(file.size)} · #{new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(file.createdAt))}
-    div.preview-header-actions
-      a.icon-button(href={details.url} download={file.name} aria-label="Download original" title="Download original")
-        Icon(name="download" size={20})
-      a.icon-button(href={details.url} target="_blank" rel="noopener noreferrer" aria-label="Open original in a new tab" title="Open original")
-        Icon(name="external-link" size={19})
-      button.icon-button(type="button" onClick={onClose} aria-label="Close file preview" autoFocus)
-        Icon(name="close" size={22})
+    button.icon-button(type="button" onClick={onClose} aria-label="Close file preview" autoFocus)
+      Icon(name="close" size={22})
   div.preview-body
     section.preview-main
-      div.preview-tabs
-        div(role="tablist" aria-label="File content")
-          button(className={tab === 'preview' ? 'is-active' : ''} type="button" role="tab" aria-selected={tab === 'preview'} aria-controls="preview-content" id="preview-tab" tabIndex={tab === 'preview' ? 0 : -1} onKeyDown={handleTabKey} onClick={() => setTab('preview')}) Preview
-          button(className={tab === 'text' ? 'is-active' : ''} type="button" role="tab" aria-selected={tab === 'text'} aria-controls="preview-content" id="text-tab" tabIndex={tab === 'text' ? 0 : -1} onKeyDown={handleTabKey} onClick={() => setTab('text')}) Extracted text
-        div.file-navigation
-          button.icon-button(type="button" disabled={index <= 0} onClick={() => navigate(-1)} aria-label="Previous file")
-            Icon(name="arrow-left" size={18})
-          span #{index + 1} / #{files.length}
-          button.icon-button(type="button" disabled={index < 0 || index >= files.length - 1} onClick={() => navigate(1)} aria-label="Next file")
-            Icon(name="arrow-right" size={18})
-      div#preview-content.preview-content(role="tabpanel" aria-labelledby={tab === 'text' ? 'text-tab' : 'preview-tab'})
+      div#preview-content.preview-content(
+        ~ role="tabpanel" aria-labelledby={tab === 'text' ? 'text-tab' : 'preview-tab'}
+        ~ onPointerDown={(event) => {
+        ~   const target = event.target as HTMLElement;
+        ~   if (event.button !== 0 || target.closest('.image-viewer, button, a, input, select, video, audio')) { swipeRef.current = null; return; }
+        ~   if (swipeRef.current) { swipeRef.current = null; return; }
+        ~   swipeRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        ~   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+        ~ }}
+        ~ onPointerUp={(event) => {
+        ~   const start = swipeRef.current; swipeRef.current = null;
+        ~   if (!start || start.id !== event.pointerId) return;
+        ~   const dx = event.clientX - start.x, dy = event.clientY - start.y;
+        ~   if (Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 1.5) navigate(dx < 0 ? 1 : -1);
+        ~ }}
+        ~ onPointerCancel={() => { swipeRef.current = null; }}
+        ~ onLostPointerCapture={() => { swipeRef.current = null; }}
+        ~ )
         if tab === 'text'
           div.extracted-text
             div.text-toolbar
@@ -113,7 +125,7 @@ dialog.file-dialog(ref={dialogRef} aria-labelledby="preview-title" onCancel={(ev
                 | #{copied ? 'Copied' : 'Copy text'}
             pre #{details.text || details.excerpt || 'No readable text was found. You can still preview or download the complete original.'}
         elseif file.mimeType.startsWith('image/')
-          ImageViewer(file={details})
+          ImageViewer(file={details} onNavigate={navigate})
         elseif file.mimeType === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
           try
             PdfViewer(file={details})
@@ -137,7 +149,24 @@ dialog.file-dialog(ref={dialogRef} aria-labelledby="preview-title" onCancel={(ev
             a.button-primary(href={details.url} target="_blank" rel="noopener noreferrer")
               Icon(name="external-link" size={17})
               | Open original
+      div.preview-tabs
+        div(role="tablist" aria-label="File content")
+          button(className={tab === 'preview' ? 'is-active' : ''} type="button" role="tab" aria-selected={tab === 'preview'} aria-controls="preview-content" id="preview-tab" tabIndex={tab === 'preview' ? 0 : -1} onKeyDown={handleTabKey} onClick={() => setTab('preview')}) Preview
+          button(className={tab === 'text' ? 'is-active' : ''} type="button" role="tab" aria-selected={tab === 'text'} aria-controls="preview-content" id="text-tab" tabIndex={tab === 'text' ? 0 : -1} onKeyDown={handleTabKey} onClick={() => setTab('text')}) Extracted text
+        div.file-navigation
+          button.icon-button(type="button" disabled={index <= 0} onClick={() => navigate(-1)} aria-label="Previous file")
+            Icon(name="arrow-left" size={18})
+          span #{index + 1} / #{files.length}
+          button.icon-button(type="button" disabled={index < 0 || index >= files.length - 1} onClick={() => navigate(1)} aria-label="Next file")
+            Icon(name="arrow-right" size={18})
     aside.preview-insights
+      div.preview-file-actions
+        p #{formatBytes(file.size)} · #{new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(file.createdAt))}
+        div
+          button.icon-button(type="button" onClick={() => void download()} disabled={downloading} aria-busy={downloading} aria-label="Download original" title="Download original")
+            Icon(name={downloading ? 'spinner-ring' : 'download'} size={20})
+          a.icon-button(href={details.url} target="_blank" rel="noopener noreferrer" aria-label="Open original in a new tab" title="Open original")
+            Icon(name="external-link" size={19})
       span.eyebrow File insights
       div.ready-card
         Icon(name="check" size={20})

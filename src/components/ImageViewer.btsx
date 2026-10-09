@@ -1,11 +1,11 @@
 module
   "use strong";
-  interface ImageViewerProps { file: StoredFile }
+  interface ImageViewerProps { file: StoredFile; onNavigate: (offset: number) => void }
   type Point = { x: number; y: number };
 import { useEffect, useLinkedState, useRef } from 'octane'
 import type { StoredFile } from '@/types/file'
 import { Icon } from '@/lib/icons'
-props { file }: ImageViewerProps
+props { file, onNavigate }: ImageViewerProps
 setup
   const [zoom, setZoom, getZoom] = useLinkedState(file.id, () => 1);
   const [rotation, setRotation] = useLinkedState(file.id, () => 0);
@@ -16,8 +16,9 @@ setup
   const pointers = useRef(new Map<number, Point>());
   const previous = useRef<Point | null>(null);
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const swipe = useRef<Point | null>(null);
   const reset = () => { setZoom(1); setPan({ x: 0, y: 0 }); setRotation(0); };
-  const changeZoom = (value: number) => { setZoom(Math.min(5, Math.max(0.5, value))); };
+  const changeZoom = (value: number) => { const next = Math.min(5, Math.max(0.5, value)); setZoom(next); if (next <= 1) setPan({ x: 0, y: 0 }); };
   useEffect(() => {
     const stage = stageRef.current;
     const wheel = (event: WheelEvent) => { event.preventDefault(); changeZoom(getZoom() * Math.exp(-event.deltaY * 0.002)); };
@@ -29,7 +30,13 @@ setup
     return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
   };
   const releasePointer = (event: PointerEvent) => {
+    const start = swipe.current;
+    swipe.current = null;
     pointers.current.delete(event.pointerId); previous.current = null; pinch.current = null;
+    if (event.type === 'pointerup' && start && getZoom() <= 1) {
+      const dx = event.clientX - start.x, dy = event.clientY - start.y;
+      if (Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 1.5) onNavigate(dx < 0 ? 1 : -1);
+    }
   };
 
 div.image-viewer(tabIndex={0} onKeyDown={(event) => {
@@ -37,21 +44,23 @@ div.image-viewer(tabIndex={0} onKeyDown={(event) => {
   ~ else if (event.key === '-') { event.preventDefault(); changeZoom(getZoom() - 0.25); }
   ~ else if (event.key === '0') { event.preventDefault(); reset(); }
   ~ }})
-  div.image-stage(
+  div.image-stage(className={zoom > 1 ? 'is-zoomed' : ''}
     ~ ref={stageRef}
-    ~ aria-label="Image preview. Pinch or use the controls to zoom; drag to pan."
+    ~ aria-label="Image preview. Swipe to change files. Pinch or use the controls to zoom; drag to pan when zoomed in."
     ~ onDoubleClick={() => { setZoom(getZoom() > 1 ? 1 : 2); setPan({ x: 0, y: 0 }); }}
     ~ onPointerDown={(event) => {
+    ~   if (event.button !== 0) return;
     ~   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     ~   pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     ~   previous.current = { x: event.clientX, y: event.clientY };
-    ~   if (pointers.current.size === 2) pinch.current = { distance: distance(), zoom: getZoom() };
+    ~   if (pointers.current.size === 1) swipe.current = getZoom() <= 1 ? { x: event.clientX, y: event.clientY } : null;
+    ~   if (pointers.current.size === 2) { swipe.current = null; pinch.current = { distance: distance(), zoom: getZoom() }; }
     ~ }}
     ~ onPointerMove={(event) => {
     ~   if (!pointers.current.has(event.pointerId)) return;
     ~   pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     ~   if (pointers.current.size === 2 && pinch.current && pinch.current.distance > 0) changeZoom(pinch.current.zoom * distance() / pinch.current.distance);
-    ~   else if (previous.current) { const current = getPan(); setPan({ x: current.x + event.clientX - previous.current.x, y: current.y + event.clientY - previous.current.y }); }
+    ~   else if (previous.current && getZoom() > 1) { const current = getPan(); setPan({ x: current.x + event.clientX - previous.current.x, y: current.y + event.clientY - previous.current.y }); }
     ~   previous.current = { x: event.clientX, y: event.clientY };
     ~ }}
     ~ onPointerUp={releasePointer}
@@ -78,4 +87,4 @@ div.image-viewer(tabIndex={0} onKeyDown={(event) => {
     button.icon-button(type="button" onClick={() => setRotation((value) => (value + 90) % 360)} aria-label="Rotate image clockwise" title="Rotate")
       Icon(name="rotate" size={20})
     button.button-secondary(type="button" onClick={reset}) Fit
-    small Pinch to zoom · Drag to pan
+    small Swipe to browse · Zoom to pan

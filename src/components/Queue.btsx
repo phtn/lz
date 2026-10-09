@@ -16,6 +16,7 @@ import type { QueueItem } from '@/types/file'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
 import { Icon } from '@/lib/icons'
+import CallChip from './ui/call-chip.btsx'
 props { queue, activeQueueCount, removeItem, retryItem, isOpen, onClose, onOpen, onView, onClear }: QueueProps
 setup
   const done = queue.filter((item) => item.status === 'done').length;
@@ -45,7 +46,22 @@ if isOpen
           div.queue-item-content
             strong(title={item.file.name}) #{item.file.name}
             div.queue-item-status
-              span #{item.status === 'reading' || item.status === 'filing' ? item.detail ?? STATUS_COPY[item.status] : STATUS_COPY[item.status]}
+              CallChip(
+                ~ className="queue-call-chip"
+                ~ icon={item.status === 'reading' ? 'search' : item.status === 'filing' ? 'edit' : 'file'}
+                ~ name={item.status === 'reading' || item.status === 'filing' ? item.detail ?? STATUS_COPY[item.status] : STATUS_COPY[item.status]}
+                ~ status={item.status === 'queued' ? 'idle' : item.status === 'done' ? 'done' : item.status === 'error' ? 'error' : 'running'}
+                ~ progress={item.progress}
+                ~ expectedMs={180}
+                ~ size={36}
+                ~ showTimer={false}
+                ~ color={item.status === 'done' ? 'var(--queue-success)' : item.status === 'error' ? 'var(--queue-error)' : 'var(--foreground)'}
+                ~ surfaceColor="var(--muted)"
+                ~ progressColor="var(--brand)"
+                ~ progressOpacity={0.14}
+                ~ doneColor="var(--queue-success)"
+                ~ errorColor="var(--queue-error)"
+                ~ )
               if item.classification
                 CategoryPill(category={item.classification.category})
             if item.status !== 'done' && item.status !== 'error'

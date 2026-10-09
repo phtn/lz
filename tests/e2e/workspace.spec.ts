@@ -89,6 +89,29 @@ for (const viewport of [{ width: 1440, height: 700 }, { width: 390, height: 844 
   })
 }
 
+test('downloads original bytes and filename and shows download errors in the preview', async ({ page }) => {
+  await mockWorkspace(page)
+  let missing = false
+  await page.route('**/api/files/image-one?download=1', (route) => {
+    expect(route.request().headers().authorization).toBe('Bearer test-token')
+    return missing
+      ? route.fulfill({ status: 404, body: 'File not found.' })
+      : route.fulfill({ contentType: 'image/png', body: image })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: /Preview travel-photo/ }).click()
+  const downloaded = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download original', exact: true }).click()
+  const download = await downloaded
+  expect(download.suggestedFilename()).toBe('travel-photo.png')
+  expect(await download.failure()).toBeNull()
+  expect(readFileSync((await download.path())!)).toEqual(image)
+  missing = true
+  await page.getByRole('button', { name: 'Download original', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('The original file could not be found in cloud storage.')
+  await expect(page.getByRole('button', { name: 'Download original', exact: true })).toBeEnabled()
+})
+
 test('signed-in desktop library, preview controls, extracted text, and folder correction', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   const errors: string[] = []
@@ -121,7 +144,7 @@ test('signed-in desktop library, preview controls, extracted text, and folder co
   await page.mouse.down()
   await page.mouse.move(stage!.x + stage!.width / 2 + 40, stage!.y + stage!.height / 2 + 20)
   await page.mouse.up()
-  await expect(page.locator('.preview-image')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 40, 20)')
+  await expect(page.locator('.preview-image')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)')
   await page.getByRole('tab', { name: 'Extracted text' }).click()
   await expect(page.locator('pre')).toContainText('Payment due')
   await page.getByRole('button', { name: 'Copy text', exact: true }).click()
@@ -145,6 +168,63 @@ test('signed-in desktop library, preview controls, extracted text, and folder co
   await page.screenshot({ path: 'test-results/desktop-empty.png' })
   expect(errors).toEqual([])
 })
+
+for (const mobile of [false, true]) {
+  test(`preview swipes between files and only pans when zoomed on ${mobile ? 'mobile' : 'desktop'}`, async ({ page }) => {
+    await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 960 })
+    await mockWorkspace(page)
+    await page.goto('/')
+    await page.getByRole('button', { name: /Preview travel-photo/ }).click()
+    const header = page.locator('.preview-header')
+    await expect(header.getByRole('button')).toHaveCount(1)
+    await expect(header.getByRole('button', { name: 'Close file preview' })).toBeVisible()
+    await expect(header.getByRole('heading')).toHaveText('travel-photo.png')
+    const stage = page.locator('.image-stage')
+    await expect(stage).toBeVisible()
+    const bounds = (await stage.boundingBox())!
+    expect(bounds.x).toBe(0)
+    expect(bounds.width).toBe(mobile ? 390 : 1440)
+    const imageBounds = (await page.locator('.preview-image').boundingBox())!
+    expect(imageBounds.width).toBe(bounds.width)
+    const cdp = mobile ? await page.context().newCDPSession(page) : null
+    const drag = async (selector: string, dx: number, dy = 0) => {
+      const box = (await page.locator(selector).boundingBox())!
+      const x = Math.round(box.x + box.width / 2), y = Math.round(box.y + box.height / 2)
+      if (cdp) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+        for (let step = 1; step <= 5; step++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * step / 5, y: y + dy * step / 5 }] })
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      } else {
+        await page.mouse.move(x, y)
+        await page.mouse.down()
+        await page.mouse.move(x + dx, y + dy, { steps: 5 })
+        await page.mouse.up()
+      }
+    }
+    await drag('.image-stage', 35, 20)
+    await expect(page.locator('.preview-image')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)')
+    await drag('.image-stage', -100, 100)
+    await expect(header.getByRole('heading')).toHaveText('travel-photo.png')
+    await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+    await drag('.image-stage', -100, 20)
+    await expect(header.getByRole('heading')).toHaveText('travel-photo.png')
+    await expect(page.locator('.preview-image')).toHaveCSS('transform', 'matrix(1.25, 0, 0, 1.25, -100, 20)')
+    await page.getByRole('button', { name: 'Zoom out', exact: true }).click()
+    await expect(page.locator('.preview-image')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)')
+    await drag('.image-stage', 100)
+    await expect(header.getByRole('heading')).toHaveText('travel-photo.png')
+    await drag('.image-stage', -100)
+    await expect(header.getByRole('heading')).toHaveText('October-invoice.txt')
+    await drag('.document-preview', -100)
+    await expect(header.getByRole('heading')).toHaveText('October-invoice.txt')
+    await drag('.document-preview', 100)
+    await expect(header.getByRole('heading')).toHaveText('travel-photo.png')
+    await expect(page.locator('.zoom-value')).toHaveText('100%')
+    await expect(page.locator('.preview-image')).toHaveCSS('opacity', '1')
+    await page.screenshot({ path: `test-results/${mobile ? 'mobile' : 'desktop'}-swipe-preview.png` })
+    await cdp?.detach()
+  })
+}
 
 test('authenticated refresh never renders the signed-out landing page', async ({ page }) => {
   await mockWorkspace(page)
@@ -409,6 +489,75 @@ test('branched folders fold, follow library filters, and stay collapsed in compa
   expect(errors).toEqual([])
 })
 
+test('mobile sidebar keeps its footer visible as folders expand and scroll', async ({ page }) => {
+  await mockWorkspace(page)
+  for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Open navigation' }).click()
+    const drawer = page.getByRole('dialog', { name: 'DropZone' })
+    await expect(drawer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)')
+    const footer = drawer.locator('.sidebar-footer')
+    const before = (await footer.boundingBox())!
+    const groups = drawer.locator('button[aria-expanded="false"]')
+    while (await groups.count()) await groups.first().click()
+    const nav = drawer.locator('.sidebar-nav')
+    await expect.poll(() => nav.evaluate((node) => node.scrollHeight - node.clientHeight)).toBeGreaterThan(0)
+    await nav.evaluate((node) => { node.scrollTop = node.scrollHeight })
+    const after = (await footer.boundingBox())!
+    expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1)
+    expect(after.y + after.height).toBeLessThanOrEqual(viewport.height)
+    await expect(footer.getByRole('button', { name: 'Sign out', exact: true })).toBeInViewport()
+    await expect(footer.getByRole('button', { name: 'Switch to dark mode' })).toBeInViewport()
+    await page.keyboard.press('Escape')
+  }
+})
+
+test('mobile upload activity fits small screens with readable status colors', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await mockWorkspace(page)
+  await page.goto('/')
+  await expect(page.locator('.file-card').first()).toBeVisible()
+  await page.locator('input[type=file]').setInputFiles(Array.from({ length: 8 }, (_, index) => ({
+    name: `Empty-document-with-a-long-filename-${index}.txt`, mimeType: 'text/plain', buffer: Buffer.alloc(0),
+  })))
+  const panel = page.locator('.queue-panel')
+  await expect(panel).toBeVisible()
+  for (const dark of [false, true]) {
+    if (dark) {
+      await page.getByRole('button', { name: 'Open navigation' }).click()
+      await page.getByRole('dialog', { name: 'DropZone' }).getByRole('button', { name: 'Switch to dark mode' }).click()
+      await page.keyboard.press('Escape')
+    }
+    const bounds = (await panel.boundingBox())!
+    expect(bounds.x).toBeGreaterThanOrEqual(0)
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(320)
+    expect(bounds.y).toBeGreaterThanOrEqual(64)
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(640)
+    await expect(panel.getByRole('button', { name: 'Minimize upload activity' })).toBeInViewport()
+    const contrast = await panel.evaluate((node) => {
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1
+      const context = canvas.getContext('2d')!
+      const luminance = (color: string) => {
+        context.fillStyle = color; context.fillRect(0, 0, 1, 1)
+        const [r, g, b] = Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3).map((value) => {
+          const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+        })
+        return r! * 0.2126 + g! * 0.7152 + b! * 0.0722
+      }
+      const background = luminance(getComputedStyle(node).backgroundColor)
+      return ['.queue-header p', '.queue-item-status', '.queue-error', '.queue-footer > span'].map((selector) => {
+        const foreground = luminance(getComputedStyle(node.querySelector(selector)!).color)
+        return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)
+      })
+    })
+    for (const ratio of contrast) expect(ratio).toBeGreaterThanOrEqual(4.5)
+    await panel.locator('.queue-items').evaluate((node) => { node.scrollTop = node.scrollHeight })
+    await expect(panel.getByRole('button', { name: 'Dismiss Empty-document-with-a-long-filename-7.txt' })).toBeInViewport()
+    await page.screenshot({ path: `test-results/mobile-queue-${dark ? 'dark' : 'light'}-320.png`, animations: 'disabled' })
+  }
+})
+
 test('mobile sidebar navigates, traps focus, dismisses, and survives switching layouts', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await mockWorkspace(page)
@@ -456,6 +605,42 @@ test('mobile sidebar navigates, traps focus, dismisses, and survives switching l
   await expect(page.locator('.dashboard')).toHaveCount(0)
 })
 
+test('upload call-chip follows real progress and completion', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await mockWorkspace(page)
+  let finishUpload!: VoidFunction
+  const uploadPending = new Promise<void>((resolve) => { finishUpload = resolve })
+  await page.route('**/api/files', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    await uploadPending
+    await route.fulfill({ status: 201, json: { file: { ...files[1], id: 'chip-file', name: 'chip-invoice.txt' } } })
+  })
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/')
+  await expect(page.locator('.file-card').first()).toBeVisible()
+  await page.locator('input[type=file]').setInputFiles({ name: 'chip-invoice.txt', mimeType: 'text/plain', buffer: Buffer.from('INVOICE NUMBER 456 TOTAL 250') })
+  const chip = page.locator('.queue-call-chip')
+  await expect(chip).toHaveAttribute('data-status', 'running')
+  await expect(chip).toHaveAttribute('aria-busy', 'true')
+  await expect(chip).toContainText('Uploading to the cloud')
+  const bar = page.getByRole('progressbar')
+  await expect.poll(async () => {
+    const fill = await chip.evaluate((node) => Number(node.querySelector<HTMLElement>(':scope > span')!.style.transform.match(/scaleX\(([^)]+)\)/)?.[1]))
+    const percentage = Number(await bar.getAttribute('aria-valuenow')) / 100
+    return Math.abs(fill - percentage)
+  }).toBeLessThanOrEqual(0.005)
+  const bounds = (await chip.boundingBox())!
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(320)
+  finishUpload()
+  await expect(chip).toHaveAttribute('data-status', 'done')
+  await expect(chip).not.toHaveAttribute('aria-busy', 'true')
+  await expect(chip).toContainText('Sorted, filed & ready to view')
+  await expect(bar).toHaveCount(0)
+  await page.screenshot({ path: 'test-results/mobile-upload-call-chip.png', animations: 'disabled' })
+  expect(errors).toEqual([])
+})
+
 test('uploads retain completion, can be reopened, and recover after an error', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const mocked = await mockWorkspace(page)
@@ -465,8 +650,10 @@ test('uploads retain completion, can be reopened, and recover after an error', a
   await page.locator('input[type=file]').setInputFiles({ name: 'new-invoice.txt', mimeType: 'text/plain', buffer: Buffer.from('INVOICE NUMBER 456 BILL TO ACME PAYMENT DUE TOTAL 250') })
   await expect(page.locator('.queue-panel')).toBeVisible()
   await expect(page.getByRole('button', { name: /Retry new-invoice/ })).toBeVisible()
+  await expect(page.locator('.queue-call-chip')).toHaveAttribute('data-status', 'error')
   await page.getByRole('button', { name: /Retry new-invoice/ }).click()
   await expect(page.locator('.queue-panel')).toContainText('All filed. All ready.')
+  await expect(page.locator('.queue-call-chip')).toHaveAttribute('data-status', 'done')
   await expect(page.locator('.queue-item')).toContainText('Sorted, filed & ready to view')
   await page.screenshot({ path: 'test-results/mobile-upload-complete.png' })
   await page.getByRole('button', { name: 'Minimize upload activity' }).click()

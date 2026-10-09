@@ -33,9 +33,10 @@ export type FileRecord = {
   jev?: JevAssessment
 }
 
-function inlineContentDisposition(name: string) {
+function contentDisposition(name: string, disposition: 'inline' | 'attachment' = 'inline') {
   const safeAscii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_')
-  return `inline; filename="${safeAscii}"; filename*=UTF-8''${encodeURIComponent(name)}`
+  const encoded = encodeURIComponent(name).replace(/['()*]/g, (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`)
+  return `${disposition}; filename="${safeAscii}"; filename*=UTF-8''${encoded}`
 }
 
 function requireSigningKey(platform: AppPlatform) {
@@ -112,7 +113,7 @@ export async function uploadStoredFile(
   await requireBucket(platform).put(record.objectKey, contents, {
     httpMetadata: {
       contentType: record.mimeType,
-      contentDisposition: inlineContentDisposition(record.name)
+      contentDisposition: contentDisposition(record.name)
     },
     customMetadata: {
       uploadId: record.id
@@ -191,15 +192,25 @@ export async function serveStoredFile(
     return new Response('This file link is invalid or has expired.', { status: 403 })
   }
 
+  return serveObject(platform, objectKey, request)
+}
+
+export async function downloadStoredFile(platform: AppPlatform, record: FileRecord, request: Request) {
+  return serveObject(platform, record.objectKey, request, record.name)
+}
+
+async function serveObject(platform: AppPlatform, objectKey: string, request: Request, downloadName?: string) {
+
   const range = request.headers.get('range')
-  const object = await requireBucket(platform).get(
-    objectKey,
-    range ? { range: new Headers({ range }) } : undefined
+  const bucket = requireBucket(platform)
+  const object = request.method === 'HEAD' ? await bucket.head(objectKey) : await bucket.get(
+    objectKey, range ? { range: new Headers({ range }) } : undefined
   )
   if (!object) return new Response('File not found.', { status: 404 })
 
   const headers = new Headers()
   object.writeHttpMetadata(headers)
+  if (downloadName) headers.set('content-disposition', contentDisposition(downloadName, 'attachment'))
   headers.set('accept-ranges', 'bytes')
   headers.set('cache-control', objectKey.includes('/thumbnails/') ? 'private, max-age=300' : 'private, no-store')
   headers.set('etag', object.httpEtag)
@@ -212,7 +223,7 @@ export async function serveStoredFile(
     headers.set('content-length', String(object.size))
   }
 
-  return new Response(object.body, {
+  return new Response('body' in object ? (object as R2ObjectBody).body : null, {
     status: object.range ? 206 : 200,
     headers
   })
