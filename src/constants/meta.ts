@@ -326,18 +326,18 @@ export const STATUS_COPY: Record<QueueStatus, string> = {
 export const CATEGORY_GROUPS: { label: string; icon: IconName; categories: Exclude<CategoryName, 'All'>[] }[] = [
   {
     label: 'Finance & admin',
-    icon: 'folder',
+    icon: 'new-folder',
     categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Finance', 'Insurance']
   },
-  { label: 'Personal records', icon: 'file', categories: ['Identity', 'Medical', 'Travel', 'Personal', 'Property'] },
-  { label: 'Work & study', icon: 'new-folder', categories: ['Work', 'Employment', 'Legal', 'Education', 'Research'] },
+  { label: 'Personal records', icon: 'folder', categories: ['Identity', 'Medical', 'Travel', 'Personal', 'Property'] },
+  { label: 'Work & study', icon: 'folder', categories: ['Work', 'Employment', 'Legal', 'Education', 'Research'] },
   {
     label: 'Documents & mail',
     icon: 'edit',
     categories: ['PDFs', 'Documents', 'Spreadsheets', 'Presentations', 'Emails']
   },
-  { label: 'Creative & media', icon: 'image', categories: ['Images', 'Design', 'Audio', 'Video', 'Media'] },
-  { label: 'Archives & code', icon: 'timeline', categories: ['Archives', 'Code'] }
+  { label: 'Creative & media', icon: 'folder', categories: ['Images', 'Design', 'Audio', 'Video', 'Media'] },
+  { label: 'Archives & code', icon: 'folder', categories: ['Archives', 'Code'] }
 ]
 export const OCR_LANGUAGES = [
   { value: 'eng', label: 'English' },

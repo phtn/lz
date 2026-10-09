@@ -41,12 +41,12 @@ export const navGroups: NavGroup[] = CATEGORY_GROUPS.map(({ label, icon, categor
 export const navHeader: NavGroup[] = [
   {
     title: 'Workspace',
-    icon: 'arrow-right',
+    icon: 'folder',
     items: [
-      { value: 'All', icon: 'files', label: 'All files', tags: ['library', 'all files'], className: 'sidebar-link' },
+      { value: 'All', icon: 'folder', label: 'All files', tags: ['library', 'all files'], className: 'sidebar-link' },
       {
         value: 'upload-activity',
-        icon: 'upload',
+        icon: 'folder',
         label: 'Activity',
         tags: ['upload', 'queue'],
         className: 'sidebar-link'

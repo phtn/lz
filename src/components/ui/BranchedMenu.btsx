@@ -57,12 +57,12 @@ component ItemContent
   //   Icon(name='file-pdf' size={12} className="-ml-0.5 -mt-px shrink-0")
   span(className="min-w-0 flex-1 font-[450] truncate") #{item.label}
   if item.count !== undefined
-    span(className="ml-auto shrink-0 pr-3 font-sans font-[550] text-sm tabular-nums") #{item.count}
+    span(className="ml-auto shrink-0 font-sans font-[550] pr-2.5 text-sm tabular-nums") #{item.count}
 
 component BranchedLeaf
   props { item, selected, isOpen, onSelect }: { item: NavItem; selected: boolean; isOpen: boolean; onSelect: VoidFunction }
   setup
-    const className = cn("mx-1.5 box-border rounded-sm px-3 flex w-full cursor-pointer items-center gap-1.5_ border-0 hover:bg-muted py-0 pr-0 text-left tracking-tight outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--bm-focus)] [height:var(--bm-row)] [color:var(--muted-foreground)] [font-family:inherit] [-webkit-tap-highlight-color:transparent] [transition:color_200ms_ease] hover:[color:var(--bm-ink)] disabled:hover:[color:var(--bm-muted)] disabled:opacity-50 data-[active]:[color:#FFFFFF] data-[active]:[font-[500]]  data-[active]:[background:var(--bm-accent)]", item.className);
+    const className = cn("mx-0 box-border rounded-sm px-2 flex w-full cursor-pointer items-center gap-1.5_ border-0 hover:bg-muted py-0 pr-0 text-left tracking-tight outline-none focus-visible:rounded-sm focus-visible:ring-0 focus:visible:ring-offset-0 focus-visible:ring-[var(--bm-focus)] [height:var(--bm-row)] [color:var(--muted-foreground)] [font-family:inherit] [-webkit-tap-highlight-color:transparent] [transition:color_200ms_ease] hover:[color:var(--bm-ink)] disabled:hover:[color:var(--bm-muted)] disabled:opacity-50 data-[active]:[color:#FFFFFF] data-[active]:[font-[500]] data-[active]:[background:var(--bm-accent)]", item.className);
     const click = (event: MouseEvent) => {
       if (item.disabled) { event.preventDefault(); return; }
       onSelect();
@@ -193,7 +193,7 @@ else
     ~ "--bm-indent": `${indent}px`,
     ~ "--bm-line-w": lineWidth,
     ~ "--bm-draw": `${drawDuration}ms`,
-    ~ "--bm-muted": `color-mix(in srgb, ${color} 50%, transparent)`,
+    ~ "--bm-muted": `color-mix(in srgb, ${color} 55%, transparent)`,
     ~ "--bm-fold": `${foldDuration}ms`
     ~ }}
     ~ )
@@ -205,7 +205,7 @@ else
     each item, i in items key item.title
       div(className="group/section flex flex-col" data-open={item.items && open.has(i) ? "" : undefined})
         button(
-          ~ className=" flex items-center cursor-pointer border-0 text-muted-foreground bg-transparent gap-3 -ms-2 ps-2 py-1.5 text-left font-medium tracking-tight outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--bm-focus)] [color:var(--bm-muted)] [font-family:inherit] [font-size:calc(var(--bm-font)+1px)] [-webkit-tap-highlight-color:transparent] [transition:color_200ms_ease] group-data-[open]/section:[color:var(--bm-ink)] data-[active]:[color:var(--bm-ink)] hover:[color:var(--bm-ink)] select-none"
+          ~ className=" flex items-center cursor-pointer border-0 text-muted-foreground bg-transparent gap-2.5 -ms-1 ps-2 py-1.5 text-left font-medium tracking-tight outline-none focus-visible:rounded-sm focus-visible:ring-0 focus-visible:ring-[var(--bm-focus)] [color:var(--bm-muted)] [font-family:inherit] [font-size:calc(var(--bm-font)+1px)] [-webkit-tap-highlight-color:transparent] [transition:color_200ms_ease] group-data-[open]/section:[color:var(--bm-ink)] data-[active]:[color:var(--bm-ink)] hover:[color:var(--bm-ink)] select-none"
           ~ data-bm-group-heading=""
           ~ type="button"
           ~ aria-controls={`${menuId}-group-${i}`}
@@ -214,15 +214,15 @@ else
           ~ data-active={!item.items && (item.title ?? item.label) === active ? "" : undefined}
           ~ onClick={() => (item.items ? toggle(i) : select(item.title ?? item.label, item))}
           ~ )
-          Icon(name={item.icon as IconName} size={18} className={cn('shrink-0 opacity-60 transition-transform duration-200 motion-reduce:transition-none', open.has(i) && ' opacity-100 text-[var(--bm-accent)]')})
+          Icon(name={item.icon as IconName} size={20} className={cn('shrink-0 opacity-60 transition-transform duration-200 motion-reduce:transition-none', open.has(i) && ' opacity-100 text-[var(--bm-accent)]')})
           span(className="min-w-0 flex-1 font-[550] capitalize") #{item.title}
           if item.count !== undefined
             span(className="hidden ml-auto shrink-0 pr-1 font-sans tabular-nums text-muted-foreground capitalize") #{item.count}
 
         if item.items
-          div(className="mx-2 grid [grid-template-rows:0fr] [transition:grid-template-rows_var(--bm-fold)_cubic-bezier(0.23,1,0.32,1)] group-data-[open]/section:[grid-template-rows:1fr] motion-reduce:transition-none" id={`${menuId}-group-${i}`} aria-hidden={!open.has(i)} inert={!open.has(i)})
+          div(className="grid [grid-template-rows:0fr] [transition:grid-template-rows_var(--bm-fold)_cubic-bezier(0.23,1,0.32,1)] group-data-[open]/section:[grid-template-rows:1fr] motion-reduce:transition-none" id={`${menuId}-group-${i}`} aria-hidden={!open.has(i)} inert={!open.has(i)})
             div(className="min-h-0 overflow-hidden")
-              div(className={"relative box-border p-1.5 mt-1.5"} style={{ height: PAD * 2 + item.items.length * rowHeight }})
+              div(className={"relative box-border px-2.5 py-1.5 mt-1 ml-3"} style={{ height: PAD * 2 + item.items.length * rowHeight }})
                 svg(
                   ~ className="pointer-events-none absolute top-0 left-0 overflow-visible opacity-0 [transition:opacity_200ms_ease] group-data-[open]/section:opacity-100 group-data-[open]/section:[transition:opacity_250ms_ease_100ms]"
                   ~ width={indent}

@@ -52,7 +52,7 @@ section.library(aria-labelledby="library-title" aria-busy={loading})
         button.icon-button(className={viewMode === 'grid' ? 'is-active' : ''} type="button" onClick={() => setViewMode('grid')} aria-label="Grid view" title="Grid view" aria-pressed={viewMode === 'grid'})
           Icon(name="grid" size={18})
         button.icon-button(className={viewMode === 'list' ? 'is-active' : ''} type="button" onClick={() => setViewMode('list')} aria-label="List view" title="List view" aria-pressed={viewMode === 'list'})
-          Icon(name="list" size={18})
+          Icon(name="grid" size={18})
 
   if loading && filteredLibrary.length === 0
     div.library-skeleton(aria-label="Loading files")

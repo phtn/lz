@@ -180,7 +180,7 @@
   --sidebar-ring: oklch(0.556 0 0);
   --line: oklch(0.3052 0 0);
   --accent: oklch(0.6161 0.2094 256.24);
-  --focus: oklch(0.856 0.16 133.26);
+  --focus: oklch(0.956 0.02 220.86);
   --destructive-foreground: var(--color-red-600);
   --destructive: var(--color-red-300);
   --success: var(--color-emerald-500);
@@ -511,7 +511,7 @@ select {
 .sidebar-separator:hover,
 .sidebar-separator:focus-visible,
 .sidebar-separator:active {
-  background: var(--focus);
+  background: var(--muted-foreground);
 }
 .sidebar-nav {
   position: relative;
@@ -548,7 +548,7 @@ select {
   display: none;
 }
 .branched-sidebar-nav {
-  padding: 16px 12px;
+  padding: 16px 10px;
 }
 .branched-sidebar-nav[data-compact] {
   padding: 16px 8px;
