@@ -842,7 +842,31 @@ select {
 .mobile-sidebar .sidebar-footer {
   position: relative;
   padding-bottom: env(safe-area-inset-bottom);
-  height: calc(40px + env(safe-area-inset-bottom));
+  height: calc(56px + env(safe-area-inset-bottom));
+}
+.mobile-sidebar-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--foreground);
+  font-size: 13px;
+}
+.mobile-sidebar-account:hover {
+  background: var(--muted);
+}
+.mobile-sidebar-account > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-sidebar-account > small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  white-space: nowrap;
 }
 .category-dot {
   width: 6px;

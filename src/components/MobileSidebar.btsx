@@ -1,6 +1,8 @@
 module "use strong";
 
-import { useEffect, useRef } from 'octane'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'octane'
+import { toast } from '@octanejs/sonner'
+import { getCurrentUser, getServerAuthUser, signOutCurrentUser, subscribeToAuthState } from '@/lib/firebase'
 import { Icon } from '@/lib/icons'
 import ThemeToggle from './ThemeToggle.btsx'
 import MobileSidebarNav from './MobileSidebarNav.btsx'
@@ -8,6 +10,17 @@ import type { WorkspaceNavigationProps } from '@/types/layout'
 
 props { open, onOpenChange, navigation }: { open: boolean; onOpenChange: (open: boolean) => void; navigation: WorkspaceNavigationProps }
 setup
+  const currentUser = useSyncExternalStore(subscribeToAuthState, getCurrentUser, getServerAuthUser);
+  const [signingOut, setSigningOut] = useState(false);
+  const handleSignOut = async () => {
+    if (signingOut || !currentUser) return;
+    setSigningOut(true);
+    try { await signOutCurrentUser(); onOpenChange(false); }
+    catch (error) {
+      onOpenChange(false);
+      toast.error(error instanceof Error ? error.message : 'Sign-out could not be completed.');
+    } finally { setSigningOut(false); }
+  };
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const touchStartRef = useRef({ x: 0, y: 0 });
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,4 +64,6 @@ dialog#mobile-navigation.mobile-sidebar(
       MobileSidebarNav(navigation={navigation} onNavigate={() => onOpenChange(false)})
     footer.sidebar-footer
       ThemeToggle
-      span Private on-device OCR
+      button.mobile-sidebar-account(type="button" disabled={signingOut || !currentUser} onClick={() => void handleSignOut()} aria-label="Sign out" title={currentUser?.email ?? 'Sign out'})
+        span #{signingOut ? 'Signing out…' : currentUser?.displayName?.split(' ')[0] ?? 'Account'}
+        small Sign out

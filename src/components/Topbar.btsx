@@ -37,11 +37,8 @@ header.topbar-header
     if !isMobile
       SearchField(search={search} setSearch={setSearch} searchInputRef={searchInputRef})
     div.topbar-actions
-      if isMobile
-        ThemeToggle
       button.account-button(type="button" disabled={busy || !ready} onClick={() => void handleAuthClick()} aria-label={currentUser ? 'Sign out' : 'Sign in with Google'} title={currentUser?.email ?? 'Sign in with Google'})
         span #{currentUser ? currentUser.displayName?.split(' ')[0] ?? 'Account' : 'Sign in'}
-
       if isMobile
         button.icon-button.mobile-nav-trigger(type="button" onClick={onOpenNavigation} aria-label="Open navigation" aria-controls="mobile-navigation" aria-expanded={navigationOpen})
           Icon(name="menu" size={20})

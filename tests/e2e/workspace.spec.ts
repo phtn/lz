@@ -407,6 +407,13 @@ test('mobile sidebar navigates, traps focus, dismisses, and survives switching l
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(page.getByRole('searchbox', { name: 'Search your files' })).toHaveValue('invoice')
   await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  await openNavigation()
+  await expect(drawer.getByText('Private on-device OCR')).toHaveCount(0)
+  const accountButton = drawer.getByRole('button', { name: 'Sign out', exact: true })
+  await expect(accountButton).toContainText('Alex')
+  await accountButton.click()
+  await expect(page.locator('.landing-page')).toBeVisible()
+  await expect(page.locator('.dashboard')).toHaveCount(0)
 })
 
 test('uploads retain completion, can be reopened, and recover after an error', async ({ page }) => {
