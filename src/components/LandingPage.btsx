@@ -18,6 +18,7 @@ import { ThemeContext } from '@/context/theme'
 import { signInWithGoogle } from '@/lib/firebase'
 import { Icon } from '@/lib/icons'
 import { CATEGORY_NAMES } from '@/constants/meta'
+import { useLenis } from '@/hooks/use-lenis'
 import ThemeToggle from './ThemeToggle.btsx'
 
 component StartButton
@@ -28,6 +29,7 @@ component StartButton
 
 props { authReady }: { authReady: boolean }
 setup
+  useLenis('page');
   const { theme } = use(ThemeContext);
   const reducedMotion = useSyncExternalStore(subscribeToMotionPreference, getReducedMotion, getServerReducedMotion);
   const [busy, setBusy] = useState(false);

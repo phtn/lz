@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from 'octane'
 import Sidebar from '@/components/Sidebar.btsx'
 import Topbar from '@/components/Topbar.btsx'
 import type { WorkspaceLayoutProps } from '@/types/layout'
+import { useLenis } from '@/hooks/use-lenis'
 
 props { navigation, topbar, children }: WorkspaceLayoutProps
 setup
+  const { wrapperRef, contentRef } = useLenis('container');
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     if (typeof window === 'undefined') return 200;
     try {
@@ -48,5 +50,6 @@ div.desktop-layout(style={{ '--sidebar-width': `${sidebarWidth}px` }})
     ~ )
   div.desktop-content
     Topbar({...topbar})
-    main#workspace-main.workspace-main
-      | #{children}
+    main#workspace-main.workspace-main(ref={wrapperRef})
+      div.workspace-scroll-content(ref={contentRef})
+        | #{children}

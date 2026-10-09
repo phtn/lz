@@ -49,6 +49,46 @@ async function mockWorkspace(page: Page, signedIn = true) {
   return { failNext: () => { failNextUpload = true } }
 }
 
+test('Lenis scrolls landing anchors and honors changes to reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await mockWorkspace(page, false)
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveClass(/lenis/)
+  await page.getByRole('link', { name: 'The good stuff', exact: true }).click()
+  await expect.poll(() => page.locator('#features').evaluate((node) => Math.abs(node.getBoundingClientRect().top))).toBeLessThan(5)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.mouse.move(100, 200)
+  const before = await page.evaluate(() => window.scrollY)
+  await page.mouse.wheel(0, 200)
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before)
+  await expect(page.locator('html')).not.toHaveClass(/lenis-smooth/)
+})
+
+for (const viewport of [{ width: 1440, height: 700 }, { width: 390, height: 844 }]) {
+  test(`Lenis scrolls the dashboard main panel at ${viewport.width}px and cleans up on sign-out`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await mockWorkspace(page)
+    await page.route('**/api/files', (route) => route.fulfill({ json: {
+      files: Array.from({ length: 40 }, (_, index) => ({ ...files[1], id: `scroll-file-${index}`, name: `Invoice ${index}.txt` })),
+    } }))
+    await page.goto('/')
+    const main = page.locator('#workspace-main')
+    await expect(main).toHaveClass(/lenis/)
+    await expect(page.locator('html')).not.toHaveClass(/lenis/)
+    await expect(page.getByRole('button', { name: /^Preview Invoice 0\.txt,/ })).toBeVisible()
+    const bounds = (await main.boundingBox())!
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 100)
+    await page.mouse.wheel(0, 600)
+    await expect.poll(() => main.evaluate((node) => node.scrollTop)).toBeGreaterThan(300)
+    expect(await page.evaluate(() => window.scrollY)).toBe(0)
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+    await expect(main).toHaveCount(0)
+    await expect(page.locator('html')).toHaveClass(/lenis/)
+    await expect(page.locator('.landing-page')).toBeVisible()
+  })
+}
+
 test('signed-in desktop library, preview controls, extracted text, and folder correction', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   const errors: string[] = []
