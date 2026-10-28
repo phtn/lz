@@ -327,7 +327,7 @@ export const STATUS_COPY: Record<QueueStatus, string> = {
   classifying: 'Choosing the best folder',
   uploading: 'Uploading to the cloud',
   filing: 'Upload sent · confirming cloud storage',
-  done: 'Sorted, filed & ready to view',
+  done: 'Upload complete.',
   error: 'Needs attention'
 }
 

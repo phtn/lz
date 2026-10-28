@@ -1,0 +1,61 @@
+module
+  "use strong";
+  // Dev-only: opens Queue with one item per status, for working on the upload activity layout
+  // without signing in or uploading. Images in public/files are used as thumbnails when present.
+  const IMAGE = __DEV_PREVIEW_FILES__.find(({ name }) => /\.(png|jpe?g|webp)$/i.test(name));
+  const createItem = (id: string, name: string, type: string, item: Partial<QueueItem>): QueueItem => ({
+    id: `dev-queue-${id}`,
+    file: new File([], name, { type }),
+    status: 'queued',
+    progress: 0,
+    ownerUid: 'dev',
+    ...item
+  });
+  const createFixtures = (): QueueItem[] => [
+    createItem('queued', 'quarterly-report-2026.pdf', 'application/pdf', {}),
+    createItem('reading', 'scanned-lease-agreement.pdf', 'application/pdf', { status: 'reading', progress: 28, detail: 'Reading page 2 of 6' }),
+    createItem('classifying', 'household-budget.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', { status: 'classifying', progress: 52 }),
+    createItem('uploading', IMAGE?.name ?? 'boarding-pass.png', 'image/png', { status: 'uploading', progress: 71, previewUrl: IMAGE ? `/files/${encodeURIComponent(IMAGE.name)}` : undefined, uploadedBytes: 1_420_000, totalBytes: 2_000_000, bytesPerSecond: 640_000 }),
+    createItem('filing', 'passport-scan.jpg', 'image/jpeg', { status: 'filing', progress: 96, detail: 'Upload sent · confirming cloud storage', classification: { category: 'Identity', kind: 'Passport', confidence: 91, excerpt: '', method: 'ocr' } }),
+    createItem('done', 'coffee-receipt.pdf', 'application/pdf', {
+      status: 'done',
+      progress: 100,
+      classification: { category: 'Receipts', kind: 'Receipt', confidence: 88, excerpt: '', method: 'ocr' },
+      storedFile: { id: 'dev-queue-stored-done', name: 'coffee-receipt.pdf', size: 84_000, mimeType: 'application/pdf', category: 'Receipts', kind: 'Receipt', confidence: 88, excerpt: '', createdAt: '2026-01-01T00:00:00Z', url: '' }
+    }),
+    createItem('review', 'misc-notes.txt', 'text/plain', {
+      status: 'done',
+      progress: 100,
+      classification: { category: 'Documents', kind: 'Text document', confidence: 42, excerpt: '', method: 'text', warning: 'Low confidence — the text was short.' },
+      storedFile: { id: 'dev-queue-stored-review', name: 'misc-notes.txt', size: 2_100, mimeType: 'text/plain', category: 'Documents', kind: 'Text document', confidence: 42, excerpt: '', createdAt: '2026-01-01T00:00:00Z', url: '', jev: { status: 'review', policyVersion: 'dev', reason: 'Low margin between folders' } }
+    }),
+    createItem('error', 'corrupted-archive.zip', 'application/zip', { status: 'error', progress: 34, error: 'The upload was interrupted. Check your connection and retry.' })
+  ];
+
+import { useState } from 'octane'
+import type { QueueItem } from '@/types/file'
+import { Icon } from '@/lib/icons'
+import Queue from './Queue.btsx'
+setup
+  const [queue, setQueue] = useState<QueueItem[] | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
+  const update = (change: (items: QueueItem[]) => QueueItem[]) => setQueue((current) => current && change(current));
+  const open = () => { setQueue(createFixtures()); setIsOpen(true); };
+  const activeQueueCount = queue?.filter((item) => !['done', 'error'].includes(item.status)).length ?? 0;
+
+fragment
+  button.dev-preview-button(type="button" onClick={open} title="Preview upload activity with one item per status")
+    Icon(name="upload" size={16})
+    | Preview queue
+  if queue
+    Queue(
+      ~ queue={queue}
+      ~ activeQueueCount={activeQueueCount}
+      ~ removeItem={(id: string) => update((items) => items.filter((item) => item.id !== id))}
+      ~ retryItem={(id: string) => update((items) => items.map((item) => item.id === id ? { ...item, status: 'reading', progress: 10, error: undefined } : item))}
+      ~ isOpen={isOpen}
+      ~ onClose={() => setIsOpen(false)}
+      ~ onOpen={() => setIsOpen(true)}
+      ~ onView={() => setIsOpen(false)}
+      ~ onClear={() => update((items) => items.filter((item) => item.status !== 'done'))}
+      ~ )

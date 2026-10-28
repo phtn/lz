@@ -11,6 +11,9 @@ module
     onView: (id: string) => void;
     onClear: () => void;
   }
+  // The chip eases its fill to each new progress value over expectedMs. Larger files report
+  // progress less often, so a longer ease keeps the bar moving between updates (180ms → 900ms at 20 MB).
+  const expectedMsFor = (bytes: number) => Math.round(Math.min(900, 180 + (bytes / (1024 * 1024)) * 36));
 import { STATUS_COPY } from '@/constants/meta'
 import type { QueueItem } from '@/types/file'
 import { getFileIcon } from '@/utils/helpers'
@@ -42,38 +45,45 @@ if isOpen
             if item.previewUrl
               img(src={item.previewUrl} alt="" decoding="async" loading="lazy")
             else
-              Icon(name={getFileIcon(item.file.name, item.file.type)} size={23})
-          div.queue-item-content
-            strong(title={item.file.name}) #{item.file.name}
+              Icon(name={getFileIcon(item.file.name, item.file.type)} size={18} className='opacity-80')
+          div(className='w-full')
+            div(className='queue-item-content flex items-center gap-4 space-y-1.5')
+              strong(title={item.file.name} className='font-[450] text-sm!') #{item.file.name}
+              if item.classification
+                CategoryPill(category={item.classification.category})
+
+
             div.queue-item-status
               CallChip(
+                ~ radius={6}
                 ~ className="queue-call-chip"
                 ~ icon={item.status === 'reading' ? 'search' : item.status === 'filing' ? 'upload' : 'file'}
                 ~ name={item.status === 'reading' || item.status === 'filing' ? item.detail ?? STATUS_COPY[item.status] : STATUS_COPY[item.status]}
                 ~ status={item.status === 'queued' ? 'idle' : item.status === 'done' ? 'done' : item.status === 'error' ? 'error' : 'running'}
                 ~ progress={item.progress}
                 ~ argument={item.status !== 'done' && item.status !== 'error' ? `${Math.round(item.progress)}%` : ''}
-                ~ expectedMs={180}
-                ~ size={36}
+                ~ expectedMs={expectedMsFor(item.file.size)}
+                ~ size={26}
                 ~ showTimer={false}
                 ~ color={item.status === 'done' ? 'var(--queue-success)' : item.status === 'error' ? 'var(--queue-error)' : 'var(--foreground)'}
                 ~ surfaceColor="var(--muted)"
-                ~ progressColor="var(--brand)"
+                ~ progressColor="var(--mac-blue)"
                 ~ progressOpacity={0.14}
                 ~ doneColor="var(--queue-success)"
                 ~ errorColor="var(--queue-error)"
                 ~ )
-              if item.classification
-                CategoryPill(category={item.classification.category})
+
             if item.error
               p.queue-error(role="alert") #{item.error}
-            if item.status === 'done' && item.storedFile?.jev && ['review', 'unavailable', 'skipped'].includes(item.storedFile.jev.status)
-              p.queue-warning Saved & ready to view. Review the folder classification.
-            if item.status === 'done' && item.classification?.warning
-              p.queue-warning #{item.classification.warning}
+            div(className='flex items-center gap-4 pt-1')
+              if item.status === 'done' && item.storedFile?.jev && ['review', 'unavailable', 'skipped'].includes(item.storedFile.jev.status)
+                p.queue-warning Saved & ready to view.
+              if item.status === 'done' && item.classification?.warning
+                p.queue-warning #{item.classification.warning}
           div.queue-item-actions
             if item.status === 'done' && item.storedFile
-              button.button-secondary(type="button" onClick={() => onView(item.storedFile!.id)}) View
+              button.icon-button(type="button" onClick={() => onView(item.storedFile!.id)} className='group')
+                Icon(name="eye" size={16} className='opacity-70 group-hover:opacity-100')
             if item.status === 'error'
               button.button-secondary(type="button" onClick={() => retryItem(item.id)} aria-label={`Retry ${item.file.name}`}) Retry
             if item.status === 'queued' || item.status === 'error' || item.status === 'done'
@@ -81,9 +91,9 @@ if isOpen
                 Icon(name="close" size={16})
     footer.queue-footer
       Icon(name="shield-check" size={15})
-      span #{activeQueueCount ? 'Keep this tab open while we file your originals.' : 'Saved originals are available when you sign in on another device.'}
+      span(className='text-xs') #{activeQueueCount ? 'Keep this tab open while we file your originals.' : 'Saved originals are available when you sign in on another device.'}
       if done > 0
-        button.text-button(type="button" onClick={onClear}) Clear completed
+        button.text-button(type="button" onClick={onClear} className='text-xs!') Clear completed
 else
   button.queue-dock(type="button" onClick={onOpen})
     Icon(name={activeQueueCount ? 'upload' : errors ? 'alert-fill' : 'check'} size={20})

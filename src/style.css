@@ -1246,19 +1246,19 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--muted);
+  background: var(--surface);
   color: var(--muted-foreground);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
-  padding: 4px 7px;
-  border-radius: 5px;
+  padding: 2.5px 7px;
+  border-radius: 50px;
   white-space: nowrap;
   max-width: 100%;
 }
 .category-pill .category-dot {
-  background: var(--muted-foreground);
-  width: 4px;
-  height: 4px;
+  background: var(--border);
+  width: 6px;
+  height: 6px;
 }
 .dark .category-pill {
   background: var(--muted);
@@ -1442,16 +1442,16 @@ select {
   gap: 12px;
   align-items: center;
   padding: 15px 18px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px dotted var(--line);
 }
 .queue-item:last-child {
   border: 0;
 }
 .queue-thumbnail {
-  width: 45px;
-  height: 51px;
-  background: var(--background);
-  border: 1px solid var(--line);
+  width: 48px;
+  height: 48px;
+  /*background: var(--background);*/
+  /*border: 1px solid var(--line);*/
   border-radius: 8px;
   display: grid;
   place-items: center;
@@ -1494,7 +1494,7 @@ select {
   min-width: 0;
   min-height: var(--cc-size);
   height: auto;
-  padding-block: 9px;
+  padding-block: 6px;
   white-space: normal;
   line-height: 1.5;
 }
@@ -2657,8 +2657,8 @@ svg:has(path):not(.no-spin) {
     gap: 6px;
   }
   .category-pill {
-    font-size: 11px;
-    padding: 5px 7px;
+    font-size: 12px;
+    padding: 3px 7px;
     white-space: normal;
     line-height: 1.4;
   }

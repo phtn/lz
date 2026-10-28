@@ -22,6 +22,7 @@ import { CATEGORY_NAMES } from '@/constants/meta'
 import { useLenis } from '@/hooks/use-lenis'
 import ThemeToggle from './ThemeToggle.btsx'
 module const DevFilePreview = lazy(() => import('./DevFilePreview.btsx'));
+module const DevQueuePreview = lazy(() => import('./DevQueuePreview.btsx'));
 
 component StartButton
   props { busy, disabled, onClick, label = 'Get organized' }: { busy: boolean; disabled: boolean; onClick: VoidFunction; label?: string }
@@ -266,6 +267,7 @@ div.landing-page
     if import.meta.env.DEV
       try
         DevFilePreview
+        DevQueuePreview
       pending
         | #{null}
     // a(href="#landing-main") Back to top ↑

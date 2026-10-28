@@ -73,8 +73,9 @@ export function truncate(value: string, length: number) {
 
 export function getFileIcon(name: string, mimeType: string): IconName {
   const extension = fileExtension(name)
-  if (mimeType.startsWith('image/')) return 'image'
-  if (['csv', 'xls', 'xlsx'].includes(extension)) return 'table'
+  if (mimeType.startsWith('image/')) return 'images'
+  if (['xls', 'xlsx'].includes(extension)) return 'xlsx'
+  if (['csv'].includes(extension)) return 'csv'
   if (mimeType === 'application/pdf' || extension === 'pdf') return 'pdf'
   return 'file'
 }

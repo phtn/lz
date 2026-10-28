@@ -21,9 +21,9 @@ module
   }
 
 component AuthLoading
-  main(className="grid min-h-screen place-items-center p-6" role="status" aria-label="Loading workspace")
-    Icon(name="spinner-ring" className="text-muted-foreground [&_svg]:animate-spin [&_svg]:[animation-duration:900ms]")
-    span.sr-only Opening your workspace…
+  main(className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading workspace")
+    div(className=' flex items-center justify-center size-96')
+      Icon(name="logomark" size={64} className="text-mac-blue")
 
 component Dashboard
   setup
