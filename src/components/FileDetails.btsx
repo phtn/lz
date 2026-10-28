@@ -10,6 +10,14 @@ module
     /** False skips the account metadata lookup, for local fixture files that the API does not know. */
     refreshMetadata?: boolean;
   }
+  // The API signs a new file URL on every request, so refreshed metadata carries a different URL for the
+  // same bytes, and every viewer keyed on the URL would load the file a second time. Keep the URL already
+  // loaded while it stays valid for at least another minute.
+  function keepLoadedUrl(current: StoredFile, next: StoredFile, now: number): StoredFile {
+    if (current.id !== next.id || current.url === next.url) return next;
+    const expires = Number(new URL(current.url, 'http://localhost').searchParams.get('expires'));
+    return expires * 1000 - now > 60_000 ? { ...next, url: current.url } : next;
+  }
 import { lazy, useEffect, useLinkedState, useRef, useState } from 'octane'
 import type { StoredFile, CategoryName } from '@/types/file'
 import { CATEGORY_NAMES } from '@/constants/meta'
@@ -59,7 +67,7 @@ setup
         const response = await request;
         const payload = await response.json() as { file?: StoredFile; error?: string };
         if (!response.ok || !payload.file) throw new Error(payload.error ?? 'File details could not be refreshed.');
-        if (!controller.signal.aborted) setDetails(payload.file);
+        if (!controller.signal.aborted) setDetails(keepLoadedUrl(getDetails(), payload.file, Date.now()));
       } catch (error) { if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : 'File details could not be refreshed.'); }
       finally { if (!controller.signal.aborted) setMetadataLoading(false); }
     })();
@@ -80,7 +88,8 @@ setup
       const response = await authenticatedFetch(`/api/files/${encodeURIComponent(file.id)}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ category }) });
       const payload = await response.json() as { file?: StoredFile; error?: string };
       if (!response.ok || !payload.file) throw new Error(payload.error ?? 'The folder could not be updated.');
-      if (dialogRef.current?.open) setDetails((current) => current.id === payload.file!.id ? payload.file! : current);
+      const current = getDetails();
+      if (dialogRef.current?.open && current.id === payload.file.id) setDetails(keepLoadedUrl(current, payload.file, Date.now()));
       onUpdate(payload.file);
     } catch (error) { setMessage(error instanceof Error ? error.message : 'The folder could not be updated.'); }
     finally { setSaving(false); }

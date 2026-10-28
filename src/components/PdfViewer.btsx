@@ -13,7 +13,9 @@ import { Icon } from '@/lib/icons'
 import { useMobile } from '@/hooks/use-mobile'
 props { file }: PdfViewerProps
 setup
-  const canvasRefs = [useRef<HTMLCanvasElement | null>(null), useRef<HTMLCanvasElement | null>(null)];
+  // Separate refs, not an array literal: a new array each render would re-run the render effect and blank the pages.
+  const firstCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const secondCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const resourceRef = useRef<PdfResource | null>(null);
   const mobile = useMobile();
   const [pageCount, setPageCount] = useLinkedState(file.url, () => 0);
@@ -65,7 +67,7 @@ setup
           if (number > pdf.numPages) continue;
           const pdfPage = await pdf.getPage(number);
           if (disposed) return;
-          const canvas = canvasRefs[slot]!.current;
+          const canvas = (slot === 0 ? firstCanvasRef : secondCanvasRef).current;
           const context = canvas?.getContext('2d');
           if (!canvas || !context) return;
           // Render at the page's displayed width (stage × zoom, split across the spread) so text stays sharp.
@@ -97,9 +99,9 @@ div.pdf-viewer
         p #{error}
         a.button-secondary(href={file.url} target="_blank" rel="noopener noreferrer") Open original
     div.pdf-pages(data-spread={spread || undefined} hidden={Boolean(error)} style={{ '--pdf-zoom': zoom }})
-      canvas(ref={canvasRefs[0]} aria-label={`Page ${first} of ${pageCount || 'PDF'}`})
+      canvas(ref={firstCanvasRef} aria-label={`Page ${first} of ${pageCount || 'PDF'}`})
       if spread
-        canvas(ref={canvasRefs[1]} aria-label={`Page ${first + 1} of ${pageCount || 'PDF'}`} data-empty={(pageCount > 0 && first + 1 > pageCount) || undefined})
+        canvas(ref={secondCanvasRef} aria-label={`Page ${first + 1} of ${pageCount || 'PDF'}`} data-empty={(pageCount > 0 && first + 1 > pageCount) || undefined})
   div.viewer-controls(aria-label="PDF controls")
     if !mobile
       fragment
