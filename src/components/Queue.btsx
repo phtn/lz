@@ -48,7 +48,7 @@ if isOpen
             div.queue-item-status
               CallChip(
                 ~ className="queue-call-chip"
-                ~ icon={item.status === 'reading' ? 'search' : item.status === 'filing' ? 'edit' : 'file'}
+                ~ icon={item.status === 'reading' ? 'search' : item.status === 'filing' ? 'upload' : 'file'}
                 ~ name={item.status === 'reading' || item.status === 'filing' ? item.detail ?? STATUS_COPY[item.status] : STATUS_COPY[item.status]}
                 ~ status={item.status === 'queued' ? 'idle' : item.status === 'done' ? 'done' : item.status === 'error' ? 'error' : 'running'}
                 ~ progress={item.progress}

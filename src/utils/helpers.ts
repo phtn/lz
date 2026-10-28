@@ -8,19 +8,51 @@ export function fileExtension(name: string) {
 
 export function fileKind(name: string, mimeType: string) {
   const extension = fileExtension(name)
-  if (mimeType.startsWith('image/') || ['heif', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'svg', 'bmp', 'tif', 'tiff', 'avif'].includes(extension)) return 'Image'
+  if (
+    mimeType.startsWith('image/') ||
+    ['heif', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'svg', 'bmp', 'tif', 'tiff', 'avif'].includes(extension)
+  )
+    return 'Image'
   if (mimeType === 'application/pdf' || extension === 'pdf') return 'PDF'
   if (['csv', 'tsv', 'xls', 'xlsx', 'ods', 'numbers'].includes(extension)) return 'Spreadsheet'
   if (['ppt', 'pptx', 'odp', 'key'].includes(extension)) return 'Presentation'
   if (['doc', 'docx', 'odt', 'rtf', 'pages', 'epub', 'mobi'].includes(extension)) return 'Document'
   if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'tgz'].includes(extension)) return 'Archive'
-  if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'opus'].includes(extension)) return 'Audio'
+  if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'opus'].includes(extension))
+    return 'Audio'
   if (mimeType.startsWith('video/') || ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'].includes(extension)) return 'Video'
   if (
-    ['js', 'jsx', 'ts', 'tsx', 'css', 'scss', 'less', 'html', 'htm', 'json', 'xml', 'yaml',
-      'yml', 'py', 'rb', 'go', 'rs', 'java', 'kt', 'c', 'h', 'cpp', 'hpp', 'cs', 'php',
-      'sh', 'sql'].includes(extension)
-  ) return 'Code file'
+    [
+      'js',
+      'jsx',
+      'ts',
+      'tsx',
+      'css',
+      'scss',
+      'less',
+      'html',
+      'htm',
+      'json',
+      'xml',
+      'yaml',
+      'yml',
+      'py',
+      'rb',
+      'go',
+      'rs',
+      'java',
+      'kt',
+      'c',
+      'h',
+      'cpp',
+      'hpp',
+      'cs',
+      'php',
+      'sh',
+      'sql'
+    ].includes(extension)
+  )
+    return 'Code file'
   if (categoryFromFileType(name, mimeType) === 'Code') return 'Code file'
   if (['eml', 'msg'].includes(extension)) return 'Email'
   if (categoryFromFileType(name, mimeType) === 'Design') return 'Design file'
@@ -43,7 +75,7 @@ export function getFileIcon(name: string, mimeType: string): IconName {
   const extension = fileExtension(name)
   if (mimeType.startsWith('image/')) return 'image'
   if (['csv', 'xls', 'xlsx'].includes(extension)) return 'table'
-  if (mimeType === 'application/pdf' || extension === 'pdf') return 'file-pdf'
+  if (mimeType === 'application/pdf' || extension === 'pdf') return 'pdf'
   return 'file'
 }
 
@@ -61,7 +93,14 @@ function countMatches(value: string, pattern: RegExp | undefined) {
 }
 
 export function classifyText(text: string, file: File): Classification {
-  if (categoryFromFileType(file.name, file.type) === 'Code') return { category: 'Code', kind: 'Code file', confidence: 98, excerpt: truncate(text, 300), method: 'File type analysis' }
+  if (categoryFromFileType(file.name, file.type) === 'Code')
+    return {
+      category: 'Code',
+      kind: 'Code file',
+      confidence: 98,
+      excerpt: truncate(text, 300),
+      method: 'File type analysis'
+    }
   const filename = file.name.replace(/[_.-]+/g, ' ')
   const content = text.normalize('NFKC').replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim().slice(0, 60000)
   let best: { rule: CategoryRule; score: number; strongMatches: number } | null = null
@@ -69,8 +108,7 @@ export function classifyText(text: string, file: File): Classification {
   for (const rule of CATEGORY_RULES) {
     const strongMatches = countMatches(content, rule.strongTerms)
     const regularMatches = countMatches(content, rule.terms)
-    const filenameMatches =
-      countMatches(filename, rule.strongTerms) + countMatches(filename, rule.terms)
+    const filenameMatches = countMatches(filename, rule.strongTerms) + countMatches(filename, rule.terms)
     if (!strongMatches && !filenameMatches && regularMatches < 2) continue
     const score = strongMatches * 6 + regularMatches + filenameMatches * 5
 

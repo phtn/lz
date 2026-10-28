@@ -3,7 +3,7 @@ import type { OctaneNode, CSSProperties } from "octane";
 import { Icon, type IconName } from "@/lib/icons";
 module
   type CallChipStatus = "idle" | "running" | "done" | "error";
-  type CallChipIcon = "terminal" | "file" | "search" | "edit";
+  type CallChipIcon = "terminal" | "file" | "search" | "edit" | "upload";
   interface CallChipProps {
     ~ icon?: CallChipIcon | OctaneNode;
     ~ name?: string;
@@ -33,7 +33,8 @@ module
     terminal: 'terminal',
     file: 'file',
     search: 'search',
-    edit: 'pen'
+    edit: 'pen',
+    upload: 'circle-dotted'
   };
   const WORDS: Record<CallChipStatus, string> = { running: "running", done: "done", error: "failed", idle: "queued" };
   const fmt = (ms: number) => (ms < 10000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`);
