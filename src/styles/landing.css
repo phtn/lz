@@ -1816,3 +1816,25 @@
     padding-block: 24px;
   }
 }
+
+/* Dev only: opens the file preview with fixtures from public/files. */
+.dev-preview-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px dashed var(--landing-line);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dev-preview-button:hover:not(:disabled) {
+  border-style: solid;
+}
+.dev-preview-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

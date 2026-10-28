@@ -339,7 +339,7 @@ test('all folders are available for palette review, including empty categories',
   await page.setViewportSize({ width: 1440, height: 960 })
   await mockWorkspace(page)
   await page.goto('/')
-  await expect(page.locator('.folder-link')).toHaveCount(28)
+  await expect(page.locator('.folder-link')).toHaveCount(29)
   await page.locator('.sidebar-folders').getByRole('button', { name: /Invoices/ }).click()
   await page.getByRole('button', { name: /Preview October-invoice/ }).click()
   // Classification destinations must remain available even when the folder is empty.
@@ -364,7 +364,7 @@ test('all folders are available for palette review, including empty categories',
   }
   await expect(page.getByRole('heading', { name: /All files 0/ })).toBeVisible()
   await expect(folders.locator('option')).toHaveCount(29)
-  await expect(page.locator('.folder-link')).toHaveCount(28)
+  await expect(page.locator('.folder-link')).toHaveCount(29)
 })
 
 test('business dark theme has readable text and action contrast on desktop', async ({ page }) => {

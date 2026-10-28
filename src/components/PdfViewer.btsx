@@ -2,18 +2,32 @@ module
   "use strong";
   interface PdfViewerProps { file: StoredFile }
   interface PdfResource { url: string; promise: Promise<PDFDocumentProxy>; destroy: () => void }
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 3;
+  const ZOOM_STEP = 0.25;
+  const PAGE_GAP = 16; // matches .pdf-pages gap
 import { useEffect, useEffectEvent, useLinkedState, useRef } from 'octane'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import type { StoredFile } from '@/types/file'
 import { Icon } from '@/lib/icons'
+import { useMobile } from '@/hooks/use-mobile'
 props { file }: PdfViewerProps
 setup
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRefs = [useRef<HTMLCanvasElement | null>(null), useRef<HTMLCanvasElement | null>(null)];
   const resourceRef = useRef<PdfResource | null>(null);
+  const mobile = useMobile();
   const [pageCount, setPageCount] = useLinkedState(file.url, () => 0);
   const [page, setPage] = useLinkedState(file.id, () => 1);
-  const [busy, setBusy] = useLinkedState(`${file.url}:${page}`, () => true);
+  // Desktop shows two pages side by side (1–2, 3–4, …) unless the reader picks single pages.
+  const [singlePage, setSinglePage] = useLinkedState(file.id, () => false);
+  const [zoom, setZoom] = useLinkedState(file.id, () => 1);
+  const spread = !mobile && !singlePage;
+  const first = spread ? page - ((page - 1) % 2) : page;
+  const last = spread && (!pageCount || first < pageCount) ? first + 1 : first;
+  const step = spread ? 2 : 1;
+  const [busy, setBusy] = useLinkedState(`${file.url}:${first}:${spread}`, () => true);
   const [error, setError] = useLinkedState(file.id, () => '');
+  const changeZoom = (value: number) => setZoom(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value)));
   const openPdf = useEffectEvent((url: string) => {
     if (resourceRef.current?.url === url) return resourceRef.current;
     let disposed = false;
@@ -46,17 +60,26 @@ setup
         const pdf = await resource.promise;
         if (disposed) return;
         setPageCount(pdf.numPages);
-        const pdfPage = await pdf.getPage(page);
-        if (disposed) return;
-        const canvas = canvasRef.current;
-        const context = canvas?.getContext('2d');
-        if (!canvas || !context) return;
-        const base = pdfPage.getViewport({ scale: 1 });
-        const width = Math.min(1600, Math.max(320, canvas.parentElement?.clientWidth ?? 900) * Math.min(window.devicePixelRatio, 2));
-        const viewport = pdfPage.getViewport({ scale: width / base.width });
-        canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
-        task = pdfPage.render({ canvas, canvasContext: context, viewport });
-        await task.promise;
+        const pages = spread ? [first, first + 1] : [first];
+        for (const [slot, number] of pages.entries()) {
+          if (number > pdf.numPages) continue;
+          const pdfPage = await pdf.getPage(number);
+          if (disposed) return;
+          const canvas = canvasRefs[slot]!.current;
+          const context = canvas?.getContext('2d');
+          if (!canvas || !context) return;
+          // Render at the page's displayed width (stage × zoom, split across the spread) so text stays sharp.
+          const base = pdfPage.getViewport({ scale: 1 });
+          const stage = canvas.closest<HTMLElement>('.pdf-stage');
+          const stageWidth = stage ? stage.clientWidth - parseFloat(getComputedStyle(stage).paddingLeft) * 2 : 900;
+          const displayed = (stageWidth * zoom - PAGE_GAP * (pages.length - 1)) / pages.length;
+          const width = Math.min(4096, Math.max(320, displayed) * Math.min(window.devicePixelRatio, 2));
+          const viewport = pdfPage.getViewport({ scale: width / base.width });
+          canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+          task = pdfPage.render({ canvas, canvasContext: context, viewport });
+          await task.promise;
+          if (disposed) return;
+        }
         if (!disposed) setBusy(false);
       } catch { if (!disposed) { setError('This PDF could not be previewed. Open the original to view it.'); setBusy(false); } }
     })();
@@ -73,10 +96,31 @@ div.pdf-viewer
       div.preview-status(role="alert")
         p #{error}
         a.button-secondary(href={file.url} target="_blank" rel="noopener noreferrer") Open original
-    canvas(ref={canvasRef} aria-label={`Page ${page} of ${pageCount || 'PDF'}`} hidden={Boolean(error)})
-  div.viewer-controls
-    button.icon-button(type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={!pageCount || page <= 1 || busy} aria-label="Previous PDF page")
+    div.pdf-pages(data-spread={spread || undefined} hidden={Boolean(error)} style={{ '--pdf-zoom': zoom }})
+      canvas(ref={canvasRefs[0]} aria-label={`Page ${first} of ${pageCount || 'PDF'}`})
+      if spread
+        canvas(ref={canvasRefs[1]} aria-label={`Page ${first + 1} of ${pageCount || 'PDF'}`} data-empty={(pageCount > 0 && first + 1 > pageCount) || undefined})
+  div.viewer-controls(aria-label="PDF controls")
+    if !mobile
+      fragment
+        div.pdf-layout-toggle(role="group" aria-label="Page layout")
+          button(type="button" aria-pressed={!spread} onClick={() => setSinglePage(true)} title="One page")
+            Icon(name="file" size={14})
+            span 1 page
+          button(type="button" aria-pressed={spread} onClick={() => setSinglePage(false)} title="Two pages side by side")
+            Icon(name="files" size={16})
+            span 2 pages
+
+
+    span.control-divider
+    button.icon-button(type="button" onClick={() => changeZoom(zoom - ZOOM_STEP)} disabled={zoom <= MIN_ZOOM} aria-label="Zoom out")
+      Icon(name="zoom-out" size={20})
+    button.zoom-value(type="button" onClick={() => changeZoom(1)} aria-label="Reset zoom" title="Reset zoom") #{Math.round(zoom * 100)}%
+    button.icon-button(type="button" onClick={() => changeZoom(zoom + ZOOM_STEP)} disabled={zoom >= MAX_ZOOM} aria-label="Zoom in")
+      Icon(name="zoom-in" size={20})
+    span.control-divider
+    button.icon-button(type="button" onClick={() => setPage(Math.max(1, first - step))} disabled={!pageCount || first <= 1 || busy} aria-label={spread ? 'Previous PDF pages' : 'Previous PDF page'} className='text-sm!')
       Icon(name="arrow-left" size={20})
-    span Page #{page} / #{pageCount || '…'}
-    button.icon-button(type="button" onClick={() => setPage((value) => Math.min(pageCount || 1, value + 1))} disabled={!pageCount || page >= pageCount || busy} aria-label="Next PDF page")
+    span #{last > first ? `Pages ${first}–${last}` : `Page ${first}`} / #{pageCount || '…'}
+    button.icon-button(type="button" onClick={() => setPage(Math.min(pageCount || 1, first + step))} disabled={!pageCount || first + step > pageCount || busy} aria-label={spread ? 'Next PDF pages' : 'Next PDF page'})
       Icon(name="arrow-right" size={20})

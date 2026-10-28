@@ -1,0 +1,44 @@
+
+import type { ClassValue } from 'octane/jsx-runtime'
+import { cn } from '../lib/utils.ts'
+import { useEffect, useLinkedState } from 'octane'
+
+module
+  type Props = {
+    condition: boolean
+    value?: string | number
+    className?: ClassValue
+    trail?: string
+    lead?: string
+    role?: string
+  }
+
+  /** Matches `animation-duration-200` on the exit class below. */
+  const EXIT_MS = 200
+
+props {condition, value, className, trail, lead}: Props
+setup
+  // CSS can animate the way out only while the node still exists, so it stays
+  // mounted for the length of the exit animation after `condition` drops.
+  // Showing mounts immediately; hiding keeps the previous value until the timer.
+  const [isMounted, setIsMounted] = useLinkedState(condition, (next, previous) => next || (previous?.value ?? false))
+  useEffect(() => {
+    if (condition || !isMounted) return
+    const timer = setTimeout(() => setIsMounted(false), EXIT_MS)
+    return () => clearTimeout(timer)
+  }, [condition, isMounted, setIsMounted])
+
+if (condition || isMounted)
+  div(
+    ~ className={cn(
+    ~   'inline-block text-btable-muted-foreground/50 text-xs px-1 space-x-2 min-w-40 flex items-center justify-end',
+    ~   condition
+    ~     ? 'animate-in fade-in animation-duration-300 delay-450 fill-mode-backwards ease-out'
+    ~     : 'animate-out fade-out animation-duration-200 fill-mode-forwards',
+    ~   className
+    ~ )}
+    ~ )
+    span #{lead}
+    span #{value}
+    span #{trail}
+    span(className='text-btable-muted-foreground/50' aria-hidden='true') ·

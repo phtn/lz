@@ -1,8 +1,8 @@
 module "use client";
 import { Tooltip as T } from "@octanejs/base-ui/tooltip";
 import { cn } from "@/lib/utils";
-import { createContext, createElement, use, useLayoutEffect, useRef, useState, useId } from "octane";
-import type {ClassValue, RefObject, OctaneNode, CSSProperties, ReactElement, Ref, PointerEventHandler, FocusEventHandler, KeyboardEventHandler } from "octane";
+import { createContext, use, useLayoutEffect, useRef, useState, useId } from "octane";
+import type {ClassValue, HTMLAttributes, RefObject, OctaneNode, CSSProperties, ReactElement, Ref, PointerEventHandler, FocusEventHandler, KeyboardEventHandler } from "octane";
 module
   type FluidTooltipOrientation = "horizontal" | "vertical" | "auto";
   type FluidTooltipSide = "top" | "right" | "bottom" | "left";
@@ -17,9 +17,11 @@ module
     sideOffset: number;
     showArrowRef: RefObject<boolean>;
     contentClassNameRef: RefObject<string | undefined>;
+    className?: ClassValue;
   }
   interface FluidTooltipGroupContextValue {
     handle: T.Handle<FluidTooltipPayload>;
+    className?: ClassValue;
     disabled: boolean;
     defaultSide: FluidTooltipSide;
     direction: FluidTooltipDirection;
@@ -77,14 +79,19 @@ module
   }
   interface FluidTooltipTriggerProps {
     children: ReactElement;
+    className?: string;
     /**
      * The element Base UI renders the trigger as, instead of a `<button>` of its own. Pass one
      * whenever the trigger already has an interactive element, so it does not end up nested inside
      * another button. `disabled` belongs on this element: T.Trigger consumes its own `disabled`
      * prop for tooltip behaviour and never forwards it to the DOM.
+     * Base UI calls a function `render` directly: assign the template to a local and return it,
+     * since a direct `(props) => @{ … }` or a bare component needs Octane's render scope and crashes.
      */
-    render?: ReactElement;
+    render?: ReactElement | ((props: HTMLAttributes<HTMLElement>) => ReactElement);
     keepOpenOnClick?: boolean;
+    /** Any other prop is merged into the props the `render` component receives. */
+    [renderProp: string]: unknown;
   }
   interface FluidTooltipContentProps {
     children: OctaneNode;
@@ -92,10 +99,9 @@ module
     showArrow?: boolean;
   }
   export { FluidTooltipRoot, FluidTooltipTrigger, FluidTooltipContent };
-// lifted from the T.Root render prop; className came from the component around it
-// its props type is the one thing the conversion cannot infer — annotate it
+// rendered from T.Root's children function; the group's className rides in the payload
 component TooltipRootChildren
-  props { payload, className }: {payload?: FluidTooltipPayload, className: ClassValue}
+  props { payload }: {payload?: FluidTooltipPayload}
   T.Portal
     if payload
       T.Positioner(
@@ -108,7 +114,7 @@ component TooltipRootChildren
         T.Popup(
           ~ role="tooltip"
           ~ id={payload.tooltipId}
-          ~ className={cn("relative origin-[var(--transform-origin)] rounded-md bg-foreground text-[12px] font-medium leading-none text-background shadow-[0_8px_24px_-8px_var(--fluid-tooltip-shadow)]", "h-[var(--popup-height,auto)] w-[var(--popup-width,auto)] max-w-[var(--available-width)] transition-[width,height,transform,opacity] duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-ending-style:duration-100 data-starting-style:scale-[0.96] data-starting-style:translate-y-1 data-starting-style:opacity-0 data-instant:transition-none motion-reduce:transition-none", className, payload.contentClassNameRef.current)}
+          ~ className={cn("relative origin-[var(--transform-origin)] rounded-md bg-foreground text-[12px] font-medium leading-none text-background shadow-[0_8px_24px_-8px_var(--fluid-tooltip-shadow)]", "h-[var(--popup-height,auto)] w-[var(--popup-width,auto)] max-w-[var(--available-width)] transition-[width,height,transform,opacity] duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-ending-style:duration-100 data-starting-style:scale-[0.96] data-starting-style:translate-y-1 data-starting-style:opacity-0 data-instant:transition-none motion-reduce:transition-none", payload.className, payload.contentClassNameRef.current)}
           ~ style={tokenStyle}
           ~ )
           T.Viewport(className={cn("relative box-border h-full w-full overflow-clip px-2 py-2", "[&_[data-previous]]:w-[calc(var(--popup-width)-1rem)] [&_[data-previous]]:translate-x-0 [&_[data-previous]]:opacity-0 [&_[data-previous]]:pointer-events-none [&_[data-previous]]:transition-none", "[&_[data-current]]:w-[calc(var(--popup-width)-1rem)] [&_[data-current]]:translate-x-0 [&_[data-current]]:opacity-100 [&_[data-current]]:transition-[translate,opacity] [&_[data-current]]:duration-[200ms,120ms]", "data-[activation-direction~='left']:[&_[data-current][data-starting-style]]:-translate-x-2 data-[activation-direction~='right']:[&_[data-current][data-starting-style]]:translate-x-2", "data-[activation-direction~='up']:[&_[data-current][data-starting-style]]:-translate-y-2 data-[activation-direction~='down']:[&_[data-current][data-starting-style]]:translate-y-2", "data-[activation-direction~='left']:[&_[data-previous][data-ending-style]]:translate-x-2 data-[activation-direction~='right']:[&_[data-previous][data-ending-style]]:-translate-x-2", "data-[activation-direction~='up']:[&_[data-previous][data-ending-style]]:translate-y-2 data-[activation-direction~='down']:[&_[data-previous][data-ending-style]]:-translate-y-2", "[[data-instant]_&_[data-previous]]:transition-none [[data-instant]_&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-previous]]:transition-none")}) #{payload.contentRef.current}
@@ -151,6 +157,7 @@ component FluidTooltipTrigger
       sideOffset: root.sideOffset,
       showArrowRef: root.showArrowRef,
       contentClassNameRef: root.contentClassNameRef,
+      className: group.className,
     };
 
 
@@ -190,6 +197,7 @@ setup
 
   const context: FluidTooltipGroupContextValue = {
     handle,
+    className,
     disabled,
     defaultSide: orientation === "vertical" ? "right" : "top",
     direction,
@@ -227,6 +235,12 @@ setup
     },
   };
 
+  // T.Root calls this directly; see FluidTooltipTriggerProps.render for why the template is assigned first.
+  const renderRootChildren = (state: { payload?: FluidTooltipPayload }) => {
+    const content = @{ <TooltipRootChildren payload={state.payload} /> };
+    return content;
+  }
+
   const handleOnOpenChange = (open: boolean) => {
     if (!open) {
       previousCenter.current = null;
@@ -240,5 +254,5 @@ T.Provider(delay={Math.max(0, openDelay)} closeDelay={Math.max(0, closeDelay)} t
     ~ handle={handle}
     ~ disabled={disabled}
     ~ onOpenChange={handleOnOpenChange}
-    ~ children={(state: { payload?: FluidTooltipPayload }) => createElement(TooltipRootChildren, { ...state, className })}
+    ~ children={renderRootChildren}
     ~ )

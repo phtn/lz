@@ -17,13 +17,11 @@ export default defineConfig({
 
 Import `.btsx` and native `.tsrx` normally. Beast generates TSRX in memory before Octane. The complete adapter honors Octane's HMR, profiling, forced SSR, renderer, exclusion, and directive controls for generated BTSX, selects server lowering during SSR transforms, and routes compiler-split `Hydrate` child queries through the originating `.btsx` module.
 
-Octane's signal engine remains experimental and opt-in. Set
-`octane.nativeReads` to enable native reads consistently in generated `.btsx`
-and native `.tsrx` modules:
-
-```ts
-beastOctane({ octane: { nativeReads: true } })
-```
+Importing `octane/signals` enables native reads automatically in generated
+`.btsx` and native `.tsrx`. Vite also forwards `opaqueSignalHandles` for untyped
+handles from a lazily loaded engine. Read [Octane 0.12](octane-0.12.md) for the
+signal-hole detection rules. `textTypes` affects native `.tsrx`; Beast's own
+parser remains the authority for BTSX text.
 
 Do not install both `beastOctane()` and a second Octane compiler plugin for the same module graph. Use the Beast-only `beast()` adapter only when the matching Octane integration is already configured.
 

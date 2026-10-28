@@ -1,0 +1,56 @@
+module
+  "use strong";
+  interface SheetViewerProps { file: StoredFile }
+import { useEffect, useLinkedState } from 'octane'
+import type { StoredFile } from '@/types/file'
+import { NuqsTestingAdapter } from '@octanejs/nuqs/adapters/testing'
+import { Icon } from '@/lib/icons'
+import NewDataTable from './table/new-data-table.btsx'
+import { loadSheetDocument, type SheetDocument, type SheetTable } from './table/lib/sheets.ts'
+
+component SheetTabs
+  props { sheets, activeSheet, onSelect }: { sheets: SheetTable[]; activeSheet: number; onSelect: (index: number) => void }
+  div.sheet-tabs(role="tablist" aria-label="Worksheets")
+    each tab, index in sheets key tab.name
+      button(className={index === activeSheet ? 'is-active' : ''} type="button" role="tab" aria-selected={index === activeSheet} onClick={() => onSelect(index)}) #{tab.name || `Sheet ${index + 1}`}
+
+props { file }: SheetViewerProps
+setup
+  const [document, setDocument] = useLinkedState<string, SheetDocument | null>(file.url, () => null);
+  const [error, setError] = useLinkedState(file.url, () => '');
+  const [activeSheet, setActiveSheet] = useLinkedState(file.url, () => 0);
+  useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch(file.url, { signal: controller.signal });
+        if (!response.ok) throw new Error('The spreadsheet could not be downloaded for preview.');
+        const parsed = await loadSheetDocument(new File([await response.blob()], file.name, { type: file.mimeType }));
+        if (!controller.signal.aborted) setDocument(parsed);
+      } catch (cause) {
+        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'This spreadsheet could not be previewed.');
+      }
+    })();
+    return () => controller.abort();
+  });
+  const sheets = document?.sheets ?? [];
+  const sheet = sheets[activeSheet] ?? sheets[0] ?? null;
+  // Shown in the middle of the table footer rather than above the table.
+  const tabs = sheets.length > 1 ? @{ <SheetTabs sheets={sheets} activeSheet={activeSheet} onSelect={setActiveSheet} /> } : null;
+
+div.sheet-viewer
+  if error
+    div.preview-status(role="alert")
+      p #{error}
+      a.button-secondary(href={file.url} target="_blank" rel="noopener noreferrer") Open original
+  elseif !document
+    div.preview-status(role="status")
+      Icon(name="spinner-ring" size={24})
+      span Loading spreadsheet…
+  else
+    // DataTable keeps sort/filter/layout in nuqs state. An in-memory adapter keeps
+    // it local to this preview, so it never leaks into the app URL or onto the
+    // next file (the stage remounts while each file loads).
+    div.sheet-stage
+      NuqsTestingAdapter(hasMemory)
+        NewDataTable(sheet={sheet} name={file.name} footerCenter={tabs})

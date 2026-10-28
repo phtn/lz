@@ -1,4 +1,4 @@
-import type { ComponentBody, OctaneNode, ReactElement, Ref } from 'octane'
+import type { ComponentBody, HTMLAttributes, OctaneNode, ReactElement, Ref } from 'octane'
 
 declare const FluidTooltip: ComponentBody<{
   children: OctaneNode
@@ -20,9 +20,11 @@ export declare const FluidTooltipRoot: ComponentBody<{
 }>
 export declare const FluidTooltipTrigger: ComponentBody<{
   children: ReactElement
-  render?: ReactElement
+  className?: string
+  render?: ReactElement | ((props: HTMLAttributes<HTMLElement>) => ReactElement)
   keepOpenOnClick?: boolean
   ref?: Ref<HTMLElement | null>
+  [renderProp: string]: unknown
 }>
 export declare const FluidTooltipContent: ComponentBody<{
   children: OctaneNode

@@ -1,3 +1,4 @@
+@import './components/table/table.css';
 @import 'tailwindcss';
 @import 'lenis/dist/lenis.css';
 @custom-variant dark (&:is(.dark *));
@@ -44,6 +45,7 @@
   --color-sidebar: var(--sidebar);
   --color-line: var(--line);
   --color-focus: var(--focus);
+  --color-mac-blue: var(--mac-blue);
   --color-accent: var(--accent);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
@@ -133,6 +135,7 @@
   --line: oklch(0.82 0 0);
   --accent: oklch(0.6161 0.2094 256.24);
   --focus: oklch(0.839 0.12 73.67);
+  --mac-blue: oklch(0.603 0.218 257.42);
   --destructive-foreground: var(--color-red-800);
   --success: var(--color-emerald-500);
   --success-foreground: var(--color-emerald-900);
@@ -183,6 +186,7 @@
   --line: oklch(0.3052 0 0);
   --accent: oklch(0.6161 0.2094 256.24);
   --focus: oklch(0.956 0.02 220.86);
+  --mac-blue: oklch(0.686 0.17 253.16);
   --destructive-foreground: var(--color-red-600);
   --destructive: var(--color-red-300);
   --success: var(--color-emerald-500);
@@ -305,6 +309,7 @@ select {
   flex-shrink: 0;
   padding: 0;
   border: 0;
+  font-size: 10px;
   border-radius: 8px;
   color: var(--muted-foreground);
   background: transparent;
@@ -1605,25 +1610,29 @@ select {
   display: flex;
   flex-direction: column;
 }
+/* Dev only: opened non-modally so the Beast devtools stay above it (see FileDetails). */
+.file-dialog:not(:modal) {
+  z-index: 1000;
+}
 .file-dialog::backdrop {
   background: #11142799;
   backdrop-filter: blur(5px);
 }
 .preview-header {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 15px 20px;
+  gap: 10px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--line);
-  flex-shrink: 0;
 }
 .preview-title {
   flex: 1;
   min-width: 0;
 }
 .preview-title h2 {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 450;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1643,15 +1652,20 @@ select {
   gap: 12px;
   margin-bottom: 20px;
 }
-.preview-file-actions p { color: var(--muted-foreground); }
-.preview-file-actions > div { display: flex; gap: 6px; }
+.preview-file-actions p {
+  color: var(--muted-foreground);
+}
+.preview-file-actions > div {
+  display: flex;
+  gap: 6px;
+}
 .preview-body > .preview-insights {
   border-left: 0;
   border-top: 1px solid var(--line);
   overflow: visible;
 }
 .preview-main {
-  height: max(320px, calc(100dvh - 160px));
+  height: max(320px, 95dvh);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1680,7 +1694,7 @@ select {
   font-size: 12px;
 }
 .preview-tabs [role='tab'].is-active {
-  background: var(--muted);
+  background: color-mix(in srgb, var(--mac-blue), transparent 80%);
   color: var(--muted-foreground);
 }
 .file-navigation {
@@ -1750,9 +1764,9 @@ select {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface), transparent 80%);
   border-top: 1px solid var(--line);
-  min-height: 65px;
+  min-height: 54px;
   padding: 8px 12px;
   flex-shrink: 0;
 }
@@ -1767,6 +1781,10 @@ select {
   margin-left: 10px;
 }
 .zoom-value {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
   font-variant-numeric: tabular-nums;
   font-size: 11px;
   min-width: 36px;
@@ -1794,6 +1812,53 @@ select {
 .preview-status [aria-hidden] {
   color: var(--muted-foreground);
 }
+.sheet-viewer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sheet-tabs {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+/* The tabs sit in the middle of the table footer; they scroll sideways when a workbook has many sheets. */
+.table-footer-center {
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
+}
+@media (max-width: 640px) {
+  /* Too narrow to share the row with pagination: the tabs wrap onto their own row. */
+  .table-footer-center {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+.sheet-tabs [role='tab'] {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--muted-foreground);
+}
+.sheet-tabs [role='tab'].is-active {
+  background: var(--mac-blue);
+  color: #ffffff;
+}
+.sheet-stage {
+  flex: 1;
+  min-height: 0;
+  padding: 0px;
+}
+.sheet-stage .reference-table-page {
+  min-height: 0;
+}
 .pdf-stage {
   position: relative;
   flex: 1;
@@ -1801,14 +1866,51 @@ select {
   min-height: 0;
   padding: 20px;
 }
+/* Zoom scales the whole page row; below 100% it narrows and centers, above it the stage scrolls. */
+.pdf-pages {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: calc(var(--pdf-zoom, 1) * 100%);
+  margin-inline: auto;
+}
+.pdf-pages[hidden] {
+  display: none;
+}
 .pdf-stage canvas {
   display: block;
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
   height: auto;
   box-shadow: 0 3px 14px #0002;
 }
-.pdf-stage canvas[hidden] {
-  display: none;
+/* The odd last page of a spread keeps its half-width slot, like a book. */
+.pdf-stage canvas[data-empty] {
+  visibility: hidden;
+}
+.pdf-layout-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--border);
+}
+.pdf-layout-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pdf-layout-toggle button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px #0001;
 }
 .preview-insights {
   min-height: 0;
@@ -2244,7 +2346,9 @@ svg:has(path):not(.no-spin) {
     border-radius: 0;
   }
   .preview-header {
-    padding: calc(10px + env(safe-area-inset-top)) 10px 10px;
+    padding: calc(8px + env(safe-area-inset-top)) 8px 10px;
+    display: flex;
+    align-items: center;
     gap: 5px;
   }
   .preview-title h2 {
@@ -2258,7 +2362,7 @@ svg:has(path):not(.no-spin) {
   }
   .preview-main {
     flex-shrink: 0;
-    height: max(240px, 66dvh);
+    height: max(240px, 95dvh);
     min-height: 0;
   }
   .preview-content {
@@ -2276,7 +2380,7 @@ svg:has(path):not(.no-spin) {
     width: 32px;
   }
   .viewer-controls {
-    min-height: 58px;
+    min-height: 54px;
     flex-wrap: wrap;
     gap: 4px;
   }

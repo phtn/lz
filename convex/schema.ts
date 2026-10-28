@@ -4,6 +4,7 @@ import { v } from "convex/values";
 export const categoryValidator = v.union(
   v.literal("Receipts"),
   v.literal("Finance"),
+  v.literal("Investments"),
   v.literal("Legal"),
   v.literal("Identity"),
   v.literal("Medical"),

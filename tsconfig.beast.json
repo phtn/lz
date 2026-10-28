@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "allowImportingTsExtensions": true, "types": ["node"] },
-  "include": [".octane/beast", "src/env.d.ts"]
+  // rootDirs lets compiled components' relative imports reach the .ts modules
+  // that stay in src. The vendored table is checked from source by tsrx-tsc;
+  // here its named .btsx imports only see the default-export ambient module.
+  "compilerOptions": { "allowImportingTsExtensions": true, "types": ["node"], "rootDirs": ["src", ".octane/beast"] },
+  "include": [".octane/beast", "src/env.d.ts"],
+  "exclude": [".octane/beast/components/table"]
 }

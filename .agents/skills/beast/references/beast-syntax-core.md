@@ -34,7 +34,7 @@ main.page
 | `.card` | `div` with class `card` |
 | `section#intro.hero` | element with ID and class shorthand |
 | `Card` | component reference |
-| `Theme.Provider` | dotted component API |
+| `Menu.Item` | dotted component API; render Octane contexts directly |
 | `Card.featured` | component plus class shorthand |
 
 Capitalized selectors are component references. After one, PascalCase and `_`/`$` dotted segments remain part of the component API; a lowercase dotted segment is class shorthand.
@@ -52,7 +52,9 @@ article.card({...cardProps} data-id={id}) #{title}
 - `name="value"` is a string, `name={expression}` is TypeScript, and a bare name is boolean.
 - `{...props}` is an ordered TypeScript spread.
 - `class` normalizes to `className`.
-- Selector classes combine with one explicit `class` or `className`.
+- Selector classes combine with one explicit `class` or `className`. A string value is
+  merged at compile time; an expression becomes `className={["shorthand", expr]}` so
+  Octane composes it clsx-style and object/array `ClassValue`s survive the merge.
 - Do not combine ID shorthand with explicit `id`, or repeat an explicit class attribute.
 
 ## Text, interpolation, and comments

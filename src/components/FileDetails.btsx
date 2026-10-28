@@ -7,6 +7,8 @@ module
     onClose: () => void;
     deleteFile: (id: string) => void | Promise<void>;
     onUpdate: (file: StoredFile) => void;
+    /** False skips the account metadata lookup, for local fixture files that the API does not know. */
+    refreshMetadata?: boolean;
   }
 import { lazy, useEffect, useLinkedState, useRef, useState } from 'octane'
 import type { StoredFile, CategoryName } from '@/types/file'
@@ -15,10 +17,13 @@ import { authenticatedFetch } from '@/lib/firebase'
 import { downloadOriginal } from '@/lib/download'
 import { formatBytes, getFileIcon } from '@/utils/helpers'
 import CategoryPill from './CategoryPill.btsx'
+import { PortalContainerContext } from '@/context/portal-container'
 import { Icon } from '@/lib/icons'
 import ImageViewer from './ImageViewer.btsx'
 module const PdfViewer = lazy(() => import('./PdfViewer.btsx'));
-props { file, files, onSelect, onClose, deleteFile, onUpdate }: FileDetailsProps
+module const SheetViewer = lazy(() => import('./SheetViewer.btsx'));
+module const SHEET_PREVIEW = /\.(csv|tsv|psv|ssv|xls|xlsx|xlsm|xlsb|ods)$/i;
+props { file, files, onSelect, onClose, deleteFile, onUpdate, refreshMetadata = true }: FileDetailsProps
 setup
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const swipeRef = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -30,19 +35,23 @@ setup
   const [copied, setCopied] = useLinkedState(file.id, () => false);
   const [confirmDelete, setConfirmDelete] = useLinkedState(file.id, () => false);
   const [saving, setSaving] = useState(false);
-  const [metadataLoading, setMetadataLoading] = useLinkedState(file.id, () => true);
+  const [metadataLoading, setMetadataLoading] = useLinkedState(file.id, () => refreshMetadata);
   const alternatives = Object.entries(details.jev?.probabilities ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const index = files.findIndex((item) => item.id === file.id);
   const navigate = (offset: number) => { const target = files[index + offset]; if (target) onSelect(target.id); };
   useEffect(() => {
     const dialog = dialogRef.current;
     const previous = document.activeElement as HTMLElement | null;
-    dialog?.showModal();
+    // Dev only: a modal dialog sits in the top layer, above the Beast devtools launcher, and makes it
+    // inert. The dialog is full-screen either way, so opening it non-modally keeps the same layout.
+    if (import.meta.env.DEV && document.getElementById('beast-devtools')) dialog?.show();
+    else dialog?.showModal();
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { dialog?.close(); document.body.style.overflow = overflow; previous?.focus(); };
   });
   useEffect(() => {
+    if (!refreshMetadata) return () => downloadControllerRef.current?.abort();
     const controller = new AbortController();
     const request = authenticatedFetch(`/api/files/${encodeURIComponent(file.id)}?metadata=1`, { signal: controller.signal });
     void (async () => {
@@ -90,19 +99,21 @@ setup
     finally { if (!controller.signal.aborted) setDownloading(false); }
   };
 
-dialog.file-dialog(ref={dialogRef} aria-labelledby="preview-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }})
+dialog.file-dialog(ref={dialogRef} aria-labelledby="preview-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onKeyDown={(event) => { if (event.key === 'Escape' && !event.defaultPrevented && !event.currentTarget.matches(':modal')) onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }})
   header.preview-header
-    div.preview-title
+    div.preview-title(className='flex! items-center gap-2')
+      Icon(name="file" size={16} className='opacity-50')
       h2#preview-title #{file.name}
-    button.icon-button(type="button" onClick={onClose} aria-label="Close file preview" autoFocus)
-      Icon(name="close" size={22})
+    button(type="button" onClick={onClose} aria-label="Close file preview" autoFocus className='text-border')
+      Icon(name="close" size={16})
   div.preview-body
     section.preview-main
       div#preview-content.preview-content(
         ~ role="tabpanel" aria-labelledby={tab === 'text' ? 'text-tab' : 'preview-tab'}
         ~ onPointerDown={(event) => {
         ~   const target = event.target as HTMLElement;
-        ~   if (event.button !== 0 || target.closest('.image-viewer, button, a, input, select, video, audio')) { swipeRef.current = null; return; }
+        ~   // Portaled popups (the table's menus) bubble here through the component tree but sit outside this panel in the DOM; capturing their pointer would swallow the click.
+        ~   if (event.button !== 0 || !event.currentTarget.contains(target) || target.closest('.image-viewer, .sheet-viewer, button, a, input, select, video, audio')) { swipeRef.current = null; return; }
         ~   if (swipeRef.current) { swipeRef.current = null; return; }
         ~   swipeRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
         ~   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -133,6 +144,15 @@ dialog.file-dialog(ref={dialogRef} aria-labelledby="preview-title" onCancel={(ev
             div.preview-status(role="status") Loading PDF viewer…
           catch error
             div.preview-status(role="alert") The PDF viewer could not be loaded. Open the original to view it.
+        elseif SHEET_PREVIEW.test(file.name)
+          try
+            // The table's popovers must portal into this modal dialog, or they render beneath it.
+            PortalContainerContext(value={dialogRef})
+              SheetViewer(file={details})
+          pending
+            div.preview-status(role="status") Loading spreadsheet viewer…
+          catch error
+            div.preview-status(role="alert") The spreadsheet viewer could not be loaded. Open the original to view it.
         elseif file.mimeType.startsWith('video/')
           div.media-preview
             video(src={details.url} controls playsInline preload="metadata" aria-label={file.name})

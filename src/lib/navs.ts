@@ -24,7 +24,7 @@ export type NavGroup = {
   count?: number
 }
 
-export const navGroups: NavGroup[] = CATEGORY_GROUPS.map(({ label, icon, categories }) => ({
+export const branches: NavGroup[] = CATEGORY_GROUPS.map(({ label, icon, categories }) => ({
   title: label,
   icon,
   items: categories.map((category) => ({
@@ -54,6 +54,9 @@ export const navHeader: NavGroup[] = [
     ]
   }
 ]
+
+// The Workspace group stays first: getWorkspaceNavGroups and the sidebar's defaultOpen rely on it.
+export const navGroups: NavGroup[] = [...navHeader, ...branches]
 
 export function getFolderCategory(value: string): Exclude<CategoryName, 'All'> | undefined {
   return CATEGORY_NAMES.find((category) => category === value)

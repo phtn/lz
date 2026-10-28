@@ -17,8 +17,9 @@ export default {
 
 The adapter selects client or server output from the Rspack target, registers source dependencies for caching and watch mode, and resolves compiler-split `.tsrx` hydration requests back to `.btsx` while preferring a real native `.tsrx` file.
 
-Compiler-level `nativeReads` is forwarded to Beast's generated-TSRX loader as
-well as Octane's native-source plugin.
+Importing `octane/signals` enables native reads automatically. Octane compiler
+options supported by the upstream plugin are forwarded to Beast's generated
+TSRX loader as well as the native-source plugin.
 
 Do not install both `beastOctane()` and a second Octane compiler plugin for the same module graph. `BeastRspackPlugin` and the Beast-only `beast()` adapter are available when `OctaneRspackPlugin` is already configured separately.
 

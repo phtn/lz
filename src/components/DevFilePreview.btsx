@@ -1,0 +1,53 @@
+module
+  "use strong";
+  // Dev-only: opens FileDetails with the files in public/files, for working on the preview layout
+  // without signing in or uploading. The list comes from rsbuild.config.ts at dev server start.
+  const TYPES: Record<string, { mimeType: string; category: CategoryName; kind: string }> = {
+    pdf: { mimeType: 'application/pdf', category: 'PDFs', kind: 'PDF document' },
+    csv: { mimeType: 'text/csv', category: 'Spreadsheets', kind: 'Spreadsheet' },
+    tsv: { mimeType: 'text/tab-separated-values', category: 'Spreadsheets', kind: 'Spreadsheet' },
+    xls: { mimeType: 'application/vnd.ms-excel', category: 'Spreadsheets', kind: 'Spreadsheet' },
+    xlsx: { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', category: 'Spreadsheets', kind: 'Spreadsheet' },
+    ods: { mimeType: 'application/vnd.oasis.opendocument.spreadsheet', category: 'Spreadsheets', kind: 'Spreadsheet' },
+    png: { mimeType: 'image/png', category: 'Images', kind: 'Image' },
+    jpg: { mimeType: 'image/jpeg', category: 'Images', kind: 'Image' },
+    jpeg: { mimeType: 'image/jpeg', category: 'Images', kind: 'Image' },
+    webp: { mimeType: 'image/webp', category: 'Images', kind: 'Image' },
+    mp4: { mimeType: 'video/mp4', category: 'Video', kind: 'Video' },
+    mp3: { mimeType: 'audio/mpeg', category: 'Audio', kind: 'Audio' },
+    txt: { mimeType: 'text/plain', category: 'Documents', kind: 'Text document' }
+  };
+  const FIXTURES: StoredFile[] = __DEV_PREVIEW_FILES__.map(({ name, size }) => {
+    const type = TYPES[name.split('.').pop()?.toLowerCase() ?? ''] ?? { mimeType: 'application/octet-stream', category: 'Documents', kind: 'File' };
+    return {
+      id: `dev-${name}`,
+      name,
+      size,
+      ...type,
+      confidence: 80,
+      excerpt: `Local fixture from public/files/${name}.`,
+      createdAt: '2026-01-01T00:00:00Z',
+      url: `/files/${encodeURIComponent(name)}`
+    };
+  });
+
+import { lazy, useState } from 'octane'
+import type { CategoryName, StoredFile } from '@/types/file'
+import { Icon } from '@/lib/icons'
+module const FileDetails = lazy(() => import('./FileDetails.btsx'));
+setup
+  const [files, setFiles] = useState(FIXTURES);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = files.find((file) => file.id === selectedId);
+  const updateFile = (next: StoredFile) => setFiles((current) => current.map((file) => file.id === next.id ? next : file));
+  const deleteFile = (id: string) => setFiles((current) => current.filter((file) => file.id !== id));
+
+fragment
+  button.dev-preview-button(type="button" onClick={() => setSelectedId(files[0]?.id ?? null)} disabled={files.length === 0} title={files.length === 0 ? 'Add files to public/files and restart the dev server' : `Preview ${files.length} files from public/files`})
+    Icon(name="terminal" size={16})
+    | Preview files (#{files.length})
+  if selected
+    try
+      FileDetails(files={files} file={selected} onSelect={setSelectedId} onClose={() => setSelectedId(null)} deleteFile={deleteFile} onUpdate={updateFile} refreshMetadata={false})
+    pending
+      | #{null}

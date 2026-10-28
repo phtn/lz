@@ -335,7 +335,7 @@ export const CATEGORY_GROUPS: { label: string; icon: IconName; categories: Exclu
   {
     label: 'Finance & admin',
     icon: 'finance',
-    categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Investments', 'Insurance']
+    categories: ['Receipts', 'Invoices', 'Banking', 'Taxes', 'Finance', 'Investments', 'Insurance']
   },
   {
     label: 'Personal records',

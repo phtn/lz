@@ -6,6 +6,7 @@ declare module '*.btsx' {
 }
 
 interface ImportMetaEnv {
+  readonly DEV: boolean
   readonly PUBLIC_FIREBASE_API_KEY?: string
   readonly PUBLIC_FIREBASE_AUTH_DOMAIN?: string
   readonly PUBLIC_FIREBASE_PROJECT_ID?: string
@@ -18,3 +19,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Files in public/files, injected by rsbuild.config.ts in development only.
+declare const __DEV_PREVIEW_FILES__: { name: string; size: number }[]

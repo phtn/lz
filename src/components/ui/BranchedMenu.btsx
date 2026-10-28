@@ -1,8 +1,9 @@
 module "use client";
-import { createElement, useLayoutEffect, useRef, useState, useLinkedState, useId } from "octane";
+import { useLayoutEffect, useRef, useState, useLinkedState, useId } from "octane";
 import { Icon, IconName } from "@/lib/icons";
 import {navGroups, type NavGroup, type NavItem} from '@/lib/navs'
 import { Link } from '@octanejs/tanstack-router';
+import type { HTMLAttributes, ReactElement } from 'octane';
 import { cn } from '@/lib/utils';
 import FluidTooltip, { FluidTooltipContent, FluidTooltipRoot, FluidTooltipTrigger } from '@/components/ui/FluidTooltip.btsx';
 
@@ -35,17 +36,36 @@ module
   const MARK = 16;
   const toSet = (open: number | number[]) => new Set(Array.isArray(open) ? open : open >= 0 ? [open] : []);
 
+component CompactItemElement
+  props { href, itemDisabled, children, ...elementProps }: HTMLAttributes<HTMLElement> & { href?: string; itemDisabled?: boolean }
+  if !href
+    button({...elementProps} type='button' disabled={itemDisabled})
+      | #{children}
+  else
+    if href.startsWith('http')
+      a({...elementProps} href={href} target='_blank' rel='noopener noreferrer' aria-disabled={itemDisabled || undefined})
+        | #{children}
+    else
+      Link({...elementProps} to={href} disabled={itemDisabled})
+        | #{children as ReactElement}
+
 component CompactBranchedItem
   props { item, selected, onSelect }: { item: NavItem; selected: boolean; onSelect: () => void }
   setup
     const className = cn('flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-sidebar-border/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', selected && 'bg-sidebar-border/60 text-primary shadow-sm')
-    const link = !item.href
-      ? createElement('button', { type: 'button', className: cn(className, item.className), onClick: onSelect, disabled: item.disabled, 'aria-current': selected ? 'page' : undefined })
-      : item.href.startsWith('http')
-      ? createElement('a', { href: item.href, target: '_blank', rel: 'noopener noreferrer', className: cn(className, item.className), onClick: onSelect, 'aria-disabled': item.disabled || undefined })
-      : createElement(Link, { to: item.href, className: cn(className, item.className), onClick: onSelect, disabled: item.disabled, 'aria-current': selected ? 'page' : undefined })
+    // Base UI calls `render` as a plain function. A direct `=> @{ … }` (or a bare component) compiles to a
+    // block that needs Octane's render scope and crashes there; assigning the template first yields an element.
+    const renderItem = (props: HTMLAttributes<HTMLElement>) => {
+      const element = @{ <CompactItemElement {...props} href={item.href} itemDisabled={item.disabled} /> };
+      return element;
+    }
   FluidTooltipRoot(id={item.value} side='right' sideOffset={12})
-    FluidTooltipTrigger(render={link})
+    FluidTooltipTrigger(
+      ~ render={renderItem}
+      ~ className={cn(className, item.className)}
+      ~ onClick={onSelect}
+      ~ aria-current={selected && !item.href?.startsWith('http') ? 'page' : undefined}
+      ~ )
       fragment
         Icon(name={item.icon} size={20})
         span(className='sr-only') #{item.label}

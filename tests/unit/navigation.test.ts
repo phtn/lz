@@ -6,7 +6,7 @@ import type { CategoryName } from '@/types/file'
 describe('workspace navigation', () => {
   test('groups every file category exactly once and keeps workspace actions separate', () => {
     const folders = branches.flatMap((group) => group.items.map((item) => item.value))
-    expect(folders).toHaveLength(28)
+    expect(folders).toHaveLength(29)
     expect(new Set(folders).size).toBe(folders.length)
     expect(folders.toSorted()).toEqual(CATEGORY_NAMES.toSorted())
     expect(navGroups[0].items.map((item) => item.value)).toEqual(['All', 'upload-activity'])

@@ -14,13 +14,14 @@ module
   function getReducedMotion() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
   function getServerReducedMotion() { return false; }
 
-import { use, useState, useSyncExternalStore } from 'octane'
+import { lazy, use, useState, useSyncExternalStore } from 'octane'
 import { ThemeContext } from '@/context/theme'
 import { signInWithGoogle } from '@/lib/firebase'
 import { Icon } from '@/lib/icons'
 import { CATEGORY_NAMES } from '@/constants/meta'
 import { useLenis } from '@/hooks/use-lenis'
 import ThemeToggle from './ThemeToggle.btsx'
+module const DevFilePreview = lazy(() => import('./DevFilePreview.btsx'));
 
 component StartButton
   props { busy, disabled, onClick, label = 'Get organized' }: { busy: boolean; disabled: boolean; onClick: VoidFunction; label?: string }
@@ -262,4 +263,9 @@ div.landing-page
       span.landing-logo.text-accent.opacity-33(aria-hidden="true") #{cloud}
       span #{brand}
     p From the makers of bigticket.ph
+    if import.meta.env.DEV
+      try
+        DevFilePreview
+      pending
+        | #{null}
     // a(href="#landing-main") Back to top ↑

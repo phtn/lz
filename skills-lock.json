@@ -5,7 +5,7 @@
       "source": "phtn/beast-skill",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "ad3b1a7c47e2a4429d0fce2518bf3018e8fde62e8ea2d2765c28cbb496b6db75"
+      "computedHash": "e10b9ad4dcdc6805251a5e3633899088277c17c10b58a20072ae173be3e80ff8"
     },
     "convex": {
       "source": "get-convex/agent-skills",

@@ -16,12 +16,14 @@ bun x create-beast@latest [directory]
 | Option | Effect |
 | --- | --- |
 | `--tailwind` | Use the Tailwind CSS template |
+| `--bundler vite\|rspack\|rsbuild` | Select the build tool (default: Vite) |
+| `--ui base-ui\|radix\|shadcn` | Select the Octane UI binding; shadcn enables Tailwind |
 | `--no-install` | Skip dependency installation |
 | `--no-git` | Skip `git init` |
 | `--force` | Write known template files into a non-empty directory without deleting unrelated files |
 | `-h`, `--help` | Print help |
 
-Inspect a non-empty target before using `--force`. The base and Tailwind templates include typed `src/App.btsx`, `src/main.ts`, styles, `vite.config.ts` with `beastOctane()`, a TSRX-aware `tsconfig.json`, and a project-owned `CHANGELOG.md`. The Tailwind template also configures `@tailwindcss/vite` and `@import "tailwindcss"`. `create-beast@0.2.12` pins the tested `octane@0.1.49` toolchain and demonstrates scoped child setup.
+Inspect a non-empty target before using `--force`. The base and Tailwind templates include typed `src/App.btsx`, `src/main.ts`, styles, `vite.config.ts` with `beastOctane()`, a TSRX-aware `tsconfig.json`, and a project-owned `CHANGELOG.md`. The Tailwind template also configures `@tailwindcss/vite` and `@import "tailwindcss"`. `create-beast@0.12.1` pins `beast-tsrx@0.12.1` and `octane@0.12.1` and explicitly installs `@tsrx/oxc@0.20.0`. See the README for optional add-ons, bundler-specific plugin setup, and the final project-directory selection.
 
 ## Compile and build
 
