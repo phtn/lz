@@ -947,15 +947,18 @@ section(className='table-section relative overflow-hidden rounded-xs md:bg-btabl
     if footerCenter
       div(className='table-footer-center min-w-0')
         | #{footerCenter}
-    if selectedCellStatistics
-      div(className='table-selection-summary' role='status' aria-label='Selected cell statistics' aria-live='polite' aria-atomic={true})
-        span #{`${selectedCellStatistics.count} ${selectedCellStatistics.count === 1 ? 'number' : 'numbers'}`}
-        span
-          | Sum #{' '}
-          strong #{CELL_STATISTICS_FORMAT.format(selectedCellStatistics.sum)}
-        span
-          | Average #{' '}
-          strong #{CELL_STATISTICS_FORMAT.format(selectedCellStatistics.average)}
+    div(className='table-selection-summary')
+      if selectedCellStatistics
+        div(className='table-selection-summary' role='status' aria-label='Selected cell statistics' aria-live='polite' aria-atomic={true})
+          span(className='space-x-1')
+            span(className='font-mono! tracking-tighter text-[]') #{selectedCellStatistics.count === 1 ? 'NUM' : 'N'}
+            span(className='text-[#fb6673]! font-sans! font-[450]!') #{selectedCellStatistics.count}
+          span
+            span(className='font-mono! tracking-tighter') SUM #{' '}
+            strong #{CELL_STATISTICS_FORMAT.format(selectedCellStatistics.sum)}
+          span
+            span(className='font-mono! tracking-tighter') AVG #{' '}
+            strong #{CELL_STATISTICS_FORMAT.format(selectedCellStatistics.average)}
     div(className='flex items-center gap-4 md:gap-8')
       p(className='m-0 font-normal text-btable-muted-foreground/80') #{tablePagination.pageIndex + 1} / #{Math.max(1, table.getPageCount()).toLocaleString()}
       div(className='flex items-center overflow-hidden h-9.5 rounded-sm divide-x divide-btable-border')

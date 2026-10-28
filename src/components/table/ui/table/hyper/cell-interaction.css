@@ -19,7 +19,7 @@ td[data-cell-editing='true'] {
 }
 
 td[data-cell-selected='true'] {
-  --btable-cell-selection: light-dark(#007AFF, #419ccf);
+  --btable-cell-selection: light-dark(#007aff, #419ccf);
   background: color-mix(in srgb, var(--btable-surface, #fff) 88%, var(--btable-cell-selection)) !important;
   color: var(--btable-foreground, #262626) !important;
   filter: none !important;
@@ -37,17 +37,20 @@ td[data-cell-editing='true'] > .table-cell-content {
 
 .table-selection-summary {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
+  justify-content: end;
   gap: 4px 16px;
   margin-inline-start: auto;
+  /*border: 1px solid var(--border);*/
+  width: 280px;
   color: var(--btable-muted-foreground);
   font-variant-numeric: tabular-nums;
 }
 
 .table-selection-summary strong {
-  color: light-dark(#007AFF, #419ccf);
-  font-weight: 550;
+  color: light-dark(#007aff, #419ccf);
+  font-weight: 450;
   white-space: nowrap;
 }
 
